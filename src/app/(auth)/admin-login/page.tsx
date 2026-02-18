@@ -26,6 +26,7 @@ export default function AdminLoginPage() {
         throw new Error("API URL not configured");
       }
 
+      // 1. Authenticate with your external backend
       const res = await fetch(`${API_URL}/api/admin/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,8 +39,25 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
+      // 2. Call your local Next.js API to set the 'admin_token' cookie
+      // This is the CRITICAL step for Middleware to work on Vercel
+      const cookieRes = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: data.token }),
+      });
+
+      if (!cookieRes.ok) {
+        throw new Error("Failed to initialize session");
+      }
+
+      // Keep localStorage if your frontend components still rely on it
       localStorage.setItem("admin_token", data.token);
+      
+      // 3. Navigate to dashboard
       router.push("/dashboard");
+      router.refresh(); // Refresh ensures middleware recognizes the new cookie immediately
+      
     } catch (err: any) {
       setError(err.message || "Invalid credentials");
     } finally {

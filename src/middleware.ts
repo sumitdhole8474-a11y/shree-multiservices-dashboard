@@ -3,41 +3,27 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // 1. Get the token
-  const token = request.cookies.get("admin_token")?.value;
 
-  // 2. Define the exact path to your dashboard folder
-  // Looking at your image, it is: /admin-login/dashboard
-  const isDashboardRoute = pathname.startsWith("/admin-login/dashboard");
-  const isLoginPage = pathname === "/admin-login";
+  // Public routes (no auth needed)
+   if (pathname.startsWith("/admin-login")) {
+     return NextResponse.next();
+   }
 
-  // LOG FOR VERCEL DEBUGGING (Check your Vercel Logs)
-  console.log(`Middleware hit: ${pathname} | Token exists: ${!!token}`);
+  // Protect dashboard routes
+  if (pathname.startsWith("/admin-login/dashboard")) {
+    const token = request.cookies.get("admin_token")?.value;
 
-  // PROTECT DASHBOARD
-  if (isDashboardRoute && !token) {
-    return NextResponse.redirect(new URL("/admin-login", request.url));
-  }
-
-  // REDIRECT IF ALREADY LOGGED IN
-  if (isLoginPage && token) {
-    return NextResponse.redirect(new URL("/admin-login/dashboard", request.url));
+    // ❌ Not logged in → redirect to login
+    if (!token) {
+      const loginUrl = new URL("/admin-login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();
 }
 
-// 3. BROAD MATCHER (Crucial)
+/* Apply middleware only on these paths */
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ["/dashboard/:path*", "/admin-login"],
 };
