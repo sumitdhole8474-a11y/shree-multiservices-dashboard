@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Protect dashboard routes
-  if (pathname.startsWith("/admin/dashboard")) {
+  if (pathname.startsWith("/dashboard")) {
     const token = request.cookies.get("admin_token")?.value;
 
     // ❌ Not logged in → redirect to login
