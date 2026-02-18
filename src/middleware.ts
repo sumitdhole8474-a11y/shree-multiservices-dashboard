@@ -5,36 +5,32 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("admin_token")?.value;
 
-  /* ================================
-     1️⃣ Allow login page if NOT logged in
-  ================================= */
-  if (pathname === "/admin-login" && !token) {
-    return NextResponse.next();
-  }
+  // 1. Identify Protected and Auth routes
+  // Adjust these strings to match your actual folder names in /app
+  const isDashboardRoute = pathname.startsWith("/dashboard"); 
+  const isLoginRoute = pathname === "/admin-login";
 
-  /* ================================
-     2️⃣ Protect dashboard routes
-  ================================= */
-  if (pathname.startsWith("/dashboard") && !token) {
+  // 2. PROTECT DASHBOARD: If no token and trying to access dashboard
+  if (isDashboardRoute && !token) {
     const loginUrl = new URL("/admin-login", request.url);
+    // Optional: add a redirect parameter so user returns here after login
+    // loginUrl.searchParams.set("from", pathname); 
     return NextResponse.redirect(loginUrl);
   }
 
-  /* ================================
-     3️⃣ Prevent logged-in users
-        from seeing login page
-  ================================= */
-  if (pathname === "/admin-login" && token) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+  // 3. PREVENT DOUBLE LOGIN: If token exists and trying to access login page
+  if (isLoginRoute && token) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
-/* ================================
-   Apply middleware only where needed
-================================ */
+/* IMPORTANT: Matcher must include the exact base paths you are checking above 
+*/
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin-login"],
+  matcher: [
+    "/dashboard/:path*", // Matches /dashboard and everything under it
+    "/admin-login"       // Matches the login page
+  ],
 };
