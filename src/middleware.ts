@@ -1,30 +1,30 @@
+// frontend/src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
   const token = request.cookies.get("admin_token")?.value;
+  const { pathname } = request.nextUrl;
 
-  // 1. Define the exact path to your dashboard
-  const DASHBOARD_PATH = "/admin-login/dashboard";
+  // 1. Log for debugging (Check Vercel logs to see if this triggers)
+  console.log("--- Middleware running on:", pathname);
 
-  // 2. If trying to access dashboard WITHOUT a token -> Redirect to login
-  if (pathname.startsWith(DASHBOARD_PATH) && !token) {
-    console.log("No token found, redirecting to login...");
-    const loginUrl = new URL("/admin-login", request.url);
-    return NextResponse.redirect(loginUrl);
-  }
+  // 2. Define exactly what path you want to protect
+  // Based on your folder: /admin-login/dashboard
+  const isDashboardPage = pathname.startsWith("/admin-login/dashboard");
 
-  // 3. If ALREADY logged in and trying to go to login page -> Redirect to dashboard
-  if (pathname === "/admin-login" && token) {
-    return NextResponse.redirect(new URL(DASHBOARD_PATH, request.url));
+  if (isDashboardPage) {
+    if (!token) {
+      console.log("No token! Redirecting to login...");
+      return NextResponse.redirect(new URL("/admin-login", request.url));
+    }
+    console.log("Token found. Access granted.");
   }
 
   return NextResponse.next();
 }
 
+// 3. The Matcher must be broad enough to catch the subfolders
 export const config = {
-  matcher: [
-    "/admin-login/:path*", // Matches /admin-login and /admin-login/dashboard
-  ],
+  matcher: ["/admin-login/:path*"], 
 };
