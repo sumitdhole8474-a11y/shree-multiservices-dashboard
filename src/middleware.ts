@@ -5,13 +5,25 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("admin_token")?.value;
 
-  /* ✅ If user is NOT logged in and tries to access dashboard */
+  /* ================================
+     1️⃣ Allow login page if NOT logged in
+  ================================= */
+  if (pathname === "/admin-login" && !token) {
+    return NextResponse.next();
+  }
+
+  /* ================================
+     2️⃣ Protect dashboard routes
+  ================================= */
   if (pathname.startsWith("/dashboard") && !token) {
     const loginUrl = new URL("/admin-login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  /* ✅ If user IS logged in and tries to access login page */
+  /* ================================
+     3️⃣ Prevent logged-in users
+        from seeing login page
+  ================================= */
   if (pathname === "/admin-login" && token) {
     const dashboardUrl = new URL("/dashboard", request.url);
     return NextResponse.redirect(dashboardUrl);
@@ -20,7 +32,9 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-/* ✅ Apply middleware ONLY where needed */
+/* ================================
+   Apply middleware only where needed
+================================ */
 export const config = {
   matcher: ["/dashboard/:path*", "/admin-login"],
 };
