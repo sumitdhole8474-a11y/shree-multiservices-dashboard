@@ -4,13 +4,13 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes (no auth needed)
-  if (pathname.startsWith("/admin-login")) {
-    return NextResponse.next();
-  }
+  // // Public routes (no auth needed)
+  // if (pathname.startsWith("/admin-login")) {
+  //   return NextResponse.next();
+  // }
 
   // Protect dashboard routes
-  if (pathname.startsWith("/admin-login/dashboard")) {
+  if (pathname.startsWith("/dashboard")) {
     const token = request.cookies.get("admin_token")?.value;
 
     // ❌ Not logged in → redirect to login
