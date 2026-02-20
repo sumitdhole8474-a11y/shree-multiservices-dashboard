@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic"; 
+
 type DashboardStats = {
   services: number;
   categories: number;
