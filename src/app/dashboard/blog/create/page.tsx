@@ -27,7 +27,7 @@ export default function CreateBlogPage() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    image: "",
+    image: "", // Base64
   });
 
   /* ===============================
@@ -45,18 +45,24 @@ export default function CreateBlogPage() {
   };
 
   /* ===============================
-     IMAGE HANDLER (SINGLE IMAGE)
+     IMAGE HANDLER (Base64)
   ================================ */
-  const handleImageSelect = (
+  const handleImageSelect = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // using same image for card + detail
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
     setForm((prev) => ({
       ...prev,
-      image: `/blogs/${file.name}`,
+      image: base64, // ✅ Store Base64
     }));
   };
 
@@ -77,8 +83,16 @@ export default function CreateBlogPage() {
         cover_image: form.image, // same image
       };
 
-      await createBlog(payload);
+      const result = await createBlog(payload);
+
+      if (!result.success) {
+        alert("Failed to create blog");
+        setLoading(false);
+        return;
+      }
+
       router.push("/dashboard/blog");
+
     } catch (error) {
       console.error(error);
       alert("Failed to create blog");
@@ -116,7 +130,7 @@ export default function CreateBlogPage() {
           className="w-full border p-2 rounded"
         />
 
-        {/* IMAGE (USED FOR CARD + DETAIL) */}
+        {/* IMAGE */}
         <div>
           <label className="block mb-1 text-sm font-medium">
             Blog Image
@@ -139,9 +153,13 @@ export default function CreateBlogPage() {
           />
 
           {form.image && (
-            <p className="mt-1 text-xs text-gray-500">
-              Selected: {form.image}
-            </p>
+            <div className="mt-2">
+              <img
+                src={form.image}
+                alt="Preview"
+                className="h-20 w-20 object-cover rounded border"
+              />
+            </div>
           )}
         </div>
 

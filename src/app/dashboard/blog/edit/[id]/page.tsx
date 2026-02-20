@@ -36,7 +36,7 @@ export default function EditBlogPage() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    image: "",
+    image: "", // Base64
   });
 
   /* ===============================
@@ -58,6 +58,7 @@ export default function EditBlogPage() {
           content: blog.content,
           image: blog.image || blog.cover_image || "",
         });
+
       } catch (error) {
         console.error(error);
         alert("Failed to load blog");
@@ -67,7 +68,7 @@ export default function EditBlogPage() {
       }
     };
 
-    fetchBlog();
+    if (id) fetchBlog();
   }, [id, router]);
 
   /* ===============================
@@ -81,15 +82,26 @@ export default function EditBlogPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleImageSelect = (
+  /* ===============================
+     IMAGE HANDLER (Base64)
+  ================================ */
+  const handleImageSelect = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
     setForm((prev) => ({
       ...prev,
-      image: `/blogs/${file.name}`,
+      image: base64,
     }));
   };
 
@@ -110,8 +122,16 @@ export default function EditBlogPage() {
         cover_image: form.image, // same image
       };
 
-      await updateBlog(id, payload);
+      const result = await updateBlog(id, payload);
+
+      if (!result.success) {
+        alert("Failed to update blog");
+        setLoading(false);
+        return;
+      }
+
       router.push("/dashboard/blog");
+
     } catch (error) {
       console.error(error);
       alert("Failed to update blog");
@@ -189,9 +209,13 @@ export default function EditBlogPage() {
           />
 
           {form.image && (
-            <p className="mt-1 text-xs text-gray-500">
-              Current: {form.image}
-            </p>
+            <div className="mt-2">
+              <img
+                src={form.image}
+                alt="Preview"
+                className="h-20 w-20 object-cover rounded border"
+              />
+            </div>
           )}
         </div>
 

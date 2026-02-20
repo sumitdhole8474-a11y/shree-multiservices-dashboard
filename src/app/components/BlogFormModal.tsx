@@ -41,15 +41,39 @@ export default function BlogFormModal({
     image: "",
   });
 
+  /* ===============================
+     PREFILL (EDIT MODE)
+  ================================ */
   useEffect(() => {
     if (blog && mode === "edit") {
       setForm({
-        title: blog.title,
-        content: blog.content,
+        title: blog.title || "",
+        content: blog.content || "",
         image: blog.image || blog.cover_image || "",
       });
     }
   }, [blog, mode]);
+
+  /* ===============================
+     IMAGE HANDLER (BASE64)
+  ================================ */
+  const handleImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setForm((prev) => ({
+        ...prev,
+        image: reader.result as string, // ✅ Base64
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  };
 
   /* ===============================
      SUBMIT
@@ -58,22 +82,25 @@ export default function BlogFormModal({
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      title: form.title,
-      slug: generateSlug(form.title),
-      description: getCardDescription(form.content),
-      content: form.content,
-      image: form.image,
-      cover_image: form.image,
-    };
-
     try {
-      mode === "create"
-        ? await createBlog(payload)
-        : await updateBlog(blog!.id, payload);
+      const payload = {
+        title: form.title,
+        slug: generateSlug(form.title),
+        description: getCardDescription(form.content),
+        content: form.content,
+        image: form.image,
+        cover_image: form.image,
+      };
+
+      if (mode === "create") {
+        await createBlog(payload);
+      } else if (blog) {
+        await updateBlog(blog.id, payload);
+      }
 
       onSaved();
-    } catch {
+    } catch (error) {
+      console.error(error);
       alert("Failed to save blog");
     } finally {
       setLoading(false);
@@ -81,7 +108,7 @@ export default function BlogFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in p-4">
       <form
         onSubmit={handleSubmit}
         className="
@@ -108,6 +135,7 @@ export default function BlogFormModal({
             type="button"
             onClick={onClose}
             className="rounded-lg p-1 hover:bg-gray-100 transition"
+            aria-label="Close"
           >
             <X size={20} />
           </button>
@@ -178,20 +206,18 @@ export default function BlogFormModal({
               type="file"
               hidden
               accept="image/*"
-              onChange={(e) =>
-                e.target.files &&
-                setForm({
-                  ...form,
-                  image: `/blogs/${e.target.files[0].name}`,
-                })
-              }
+              onChange={handleImageChange}
             />
           </label>
 
           {form.image && (
-            <p className="mt-1 text-xs text-gray-500">
-              Selected: {form.image}
-            </p>
+            <div className="mt-2">
+              <img
+                src={form.image}
+                alt="Preview"
+                className="h-24 w-24 object-cover rounded-lg border"
+              />
+            </div>
           )}
         </div>
 

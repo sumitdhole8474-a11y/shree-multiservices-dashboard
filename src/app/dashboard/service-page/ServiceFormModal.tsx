@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { X, ImagePlus, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   createService,
   updateService,
 } from "@/app/services/services.service";
 import { getAdminCategories } from "@/app/services/categories.service";
+
+const MAX_IMAGES = 5;
 
 export default function ServiceFormModal({
   service,
@@ -17,18 +19,28 @@ export default function ServiceFormModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const imageRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [imageName, setImageName] = useState<string>("");
 
+  /* =========================
+     FORM STATE
+  ========================= */
   const [form, setForm] = useState({
     title: "",
     long_description: "",
     category_id: "",
   });
 
+  /* =========================
+     GALLERY STATE (5 images)
+  ========================= */
+  const [gallery, setGallery] = useState<
+    { file: File; preview: string }[]
+  >([]);
+
+  /* =========================
+     LOAD DATA
+  ========================= */
   useEffect(() => {
     getAdminCategories().then(setCategories);
 
@@ -38,50 +50,89 @@ export default function ServiceFormModal({
         long_description: service.long_description || "",
         category_id: String(service.category_id),
       });
-      setPreview(service.image_url || null);
-
-      if (service.image_url) {
-        const parts = service.image_url.split("/");
-        setImageName(parts[parts.length - 1]);
-      }
     }
   }, [service]);
 
+  /* =========================
+     ADD GALLERY IMAGE
+  ========================= */
+  const handleGalleryAdd = (file: File) => {
+    if (gallery.length >= MAX_IMAGES) return;
+
+    const newItem = {
+      file,
+      preview: URL.createObjectURL(file),
+    };
+
+    setGallery((prev) => [...prev, newItem]);
+  };
+
+  /* =========================
+     REMOVE IMAGE
+  ========================= */
+  const removeGalleryImage = (index: number) => {
+    setGallery((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /* =========================
+     DRAG REORDER
+  ========================= */
+  const handleDragStart = (index: number) => {
+    (window as any).dragIndex = index;
+  };
+
+  const handleDropReorder = (index: number) => {
+    const dragIndex = (window as any).dragIndex;
+    if (dragIndex === undefined) return;
+
+    const updated = [...gallery];
+    const [moved] = updated.splice(dragIndex, 1);
+    updated.splice(index, 0, moved);
+
+    setGallery(updated);
+  };
+
+  /* =========================
+     SUBMIT
+  ========================= */
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (gallery.length !== 5) {
+      alert("Exactly 5 images are required.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const fd = new FormData();
+
       fd.append("title", form.title);
       fd.append("long_description", form.long_description);
       fd.append("category_id", form.category_id);
 
-      if (imageRef.current?.files?.[0]) {
-        fd.append("image", imageRef.current.files[0]);
-      }
+      // 🔥 Append 5 gallery images
+      gallery.forEach((item) => {
+        fd.append("gallery", item.file);
+      });
 
-      service
+      const result = service
         ? await updateService(service.id, fd)
         : await createService(fd);
 
+      if (!result?.success) {
+        alert(result?.message || "Failed to save service");
+        return;
+      }
+
       onSaved();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
-
-  /* =============================
-     IMAGE HANDLER (IMPROVED)
-  ============================= */
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setPreview(URL.createObjectURL(file));
-    setImageName(file.name);
   };
 
   return (
@@ -99,6 +150,7 @@ export default function ServiceFormModal({
           </button>
         </div>
 
+        {/* TITLE */}
         <input
           required
           placeholder="Service title"
@@ -109,6 +161,7 @@ export default function ServiceFormModal({
           className="w-full px-4 py-2.5 rounded-lg border"
         />
 
+        {/* CATEGORY */}
         <select
           required
           value={form.category_id}
@@ -125,6 +178,7 @@ export default function ServiceFormModal({
           ))}
         </select>
 
+        {/* DESCRIPTION */}
         <textarea
           rows={4}
           placeholder="Long description"
@@ -138,40 +192,74 @@ export default function ServiceFormModal({
           className="w-full px-4 py-2.5 rounded-lg border"
         />
 
-        {/* IMAGE PICKER */}
-        <label
-          htmlFor="image"
-          className="flex gap-2 items-center border-dashed border rounded-lg p-4 cursor-pointer text-gray-600 hover:border-blue-500 hover:text-blue-600"
-        >
-          <ImagePlus />
-          {imageName ? "Change image" : "Upload image"}
-          <input
-            ref={imageRef}
-            id="image"
-            type="file"
-            hidden
-            accept="image/*"
-            onChange={handleImageChange}
-          />
-        </label>
-
-        {/* FILE NAME */}
-        {imageName && (
-          <p className="text-xs text-gray-500 truncate">
-            Selected file:{" "}
-            <span className="font-medium">{imageName}</span>
+        {/* ======================
+           GALLERY GRID (5 only)
+        ====================== */}
+        <div>
+          <p className="text-sm font-medium mb-3">
+            Gallery Images (Exactly 5 Required)
           </p>
-        )}
 
-        {/* PREVIEW */}
-        {preview && (
-          <img
-            src={preview}
-            className="h-24 w-24 rounded-lg object-cover border"
-            alt="Preview"
-          />
-        )}
+          <div className="grid grid-cols-5 gap-3">
+            {[0, 1, 2, 3, 4].map((i) => {
+              const item = gallery[i];
 
+              return (
+                <div
+                  key={i}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() =>
+                    item ? handleDropReorder(i) : undefined
+                  }
+                  draggable={!!item}
+                  onDragStart={() =>
+                    item && handleDragStart(i)
+                  }
+                  className="relative aspect-square border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-500 transition"
+                >
+                  {item ? (
+                    <>
+                      <img
+                        src={item.preview}
+                        className="w-full h-full object-cover"
+                        alt=""
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeGalleryImage(i)
+                        }
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
+                  ) : (
+                    <label className="flex flex-col items-center text-gray-400 cursor-pointer">
+                      <Plus />
+                      <span className="text-[10px]">
+                        Image {i + 1}
+                      </span>
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          handleGalleryAdd(
+                            e.target.files[0]
+                          )
+                        }
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ACTIONS */}
         <div className="flex justify-end gap-3 pt-4">
           <button
             type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ServicesTable from "./ServicesTable";
 import ServiceFormModal from "./ServiceFormModal";
 import { getAdminServices } from "@/app/services/services.service";
@@ -11,44 +11,77 @@ export default function ServicePage() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    const data = await getAdminServices();
-    setServices(data);
-    setLoading(false);
-  };
+  /* =====================================
+     LOAD SERVICES
+  ===================================== */
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const data = await getAdminServices();
+
+      // Always ensure array
+      setServices(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load services:", error);
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  /* =====================================
+     HANDLE ADD
+  ===================================== */
+  const handleAdd = () => {
+    setFormService(null);
+    setShowForm(true);
+  };
+
+  /* =====================================
+     HANDLE EDIT
+     (If you're using separate Edit Page,
+      you may remove modal editing)
+  ===================================== */
+  const handleEdit = (service: any) => {
+    setFormService(service);
+    setShowForm(true);
+  };
+
+  /* =====================================
+     AFTER SAVE
+  ===================================== */
+  const handleSaved = async () => {
+    setShowForm(false);
+    await load();
+  };
 
   return (
     <>
-      {/* ADD / EDIT MODAL */}
+      {/* ============================
+          ADD / EDIT MODAL
+      ============================ */}
       {showForm && (
         <ServiceFormModal
           service={formService}
           onClose={() => setShowForm(false)}
-          onSaved={() => {
-            setShowForm(false);
-            load();
-          }}
+          onSaved={handleSaved}
         />
       )}
 
-      {/* TABLE */}
+      {/* ============================
+          TABLE
+      ============================ */}
       <ServicesTable
         services={services}
         loading={loading}
         onRefresh={load}
-        onAdd={() => {
-          setFormService(null);
-          setShowForm(true);
-        }}
-        onEdit={(service) => {
-          setFormService(service);
-          setShowForm(true);
-        }}
+        onAdd={handleAdd}
+        onEdit={handleEdit}
       />
     </>
   );

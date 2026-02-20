@@ -8,8 +8,8 @@ export type Blog = {
   id: string;
   title: string;
   description: string;
-  image: string | null;
-  cover_image: string | null;
+  image: string | null;        // Base64
+  cover_image: string | null;  // Base64
   slug: string;
   content: string;
   created_at: string;
@@ -19,8 +19,8 @@ export type Blog = {
 export type CreateBlogPayload = {
   title: string;
   description: string;
-  image?: string;
-  cover_image?: string;
+  image?: string;        // Base64
+  cover_image?: string;  // Base64
   slug: string;
   content: string;
 };
@@ -32,6 +32,7 @@ export const getAllBlogsAdmin = async (): Promise<Blog[]> => {
   try {
     const res = await fetch(`${API_BASE_URL}/api/admin/blogs`, {
       method: "GET",
+      headers: { "Content-Type": "application/json" },
       cache: "no-store",
     });
 
@@ -40,7 +41,9 @@ export const getAllBlogsAdmin = async (): Promise<Blog[]> => {
       return [];
     }
 
-    return await res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+
   } catch (error) {
     console.error("❌ getAllBlogsAdmin error:", error);
     return [];
@@ -54,17 +57,18 @@ export const getBlogByIdAdmin = async (
   id: string
 ): Promise<Blog | null> => {
   try {
+    if (!id) return null;
+
     const res = await fetch(
       `${API_BASE_URL}/api/admin/blogs/${id}`,
       {
         method: "GET",
+        headers: { "Content-Type": "application/json" },
         cache: "no-store",
       }
     );
 
-    if (res.status === 404) {
-      return null;
-    }
+    if (res.status === 404) return null;
 
     if (!res.ok) {
       console.warn("⚠️ getBlogByIdAdmin failed:", res.status);
@@ -72,6 +76,7 @@ export const getBlogByIdAdmin = async (
     }
 
     return await res.json();
+
   } catch (error) {
     console.error("❌ getBlogByIdAdmin error:", error);
     return null;
@@ -99,6 +104,7 @@ export const createBlog = async (
     }
 
     return { success: true };
+
   } catch (error) {
     console.error("❌ createBlog error:", error);
     return { success: false };
@@ -113,6 +119,8 @@ export const updateBlog = async (
   payload: CreateBlogPayload
 ): Promise<{ success: boolean }> => {
   try {
+    if (!id) return { success: false };
+
     const res = await fetch(
       `${API_BASE_URL}/api/admin/blogs/${id}`,
       {
@@ -130,6 +138,7 @@ export const updateBlog = async (
     }
 
     return { success: true };
+
   } catch (error) {
     console.error("❌ updateBlog error:", error);
     return { success: false };
@@ -143,6 +152,8 @@ export const deleteBlog = async (
   id: string
 ): Promise<{ success: boolean }> => {
   try {
+    if (!id) return { success: false };
+
     const res = await fetch(
       `${API_BASE_URL}/api/admin/blogs/${id}`,
       {
@@ -156,6 +167,7 @@ export const deleteBlog = async (
     }
 
     return { success: true };
+
   } catch (error) {
     console.error("❌ deleteBlog error:", error);
     return { success: false };
@@ -169,6 +181,8 @@ export const toggleBlogVisibility = async (
   id: string
 ): Promise<{ success: boolean }> => {
   try {
+    if (!id) return { success: false };
+
     const res = await fetch(
       `${API_BASE_URL}/api/admin/blogs/${id}/toggle`,
       {
@@ -185,6 +199,7 @@ export const toggleBlogVisibility = async (
     }
 
     return { success: true };
+
   } catch (error) {
     console.error(
       "❌ toggleBlogVisibility error:",

@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
         throw new Error("API URL not configured");
       }
 
-      const res = await fetch(`${API_URL}/api/admin/auth/login`, {
+      const res = await fetch(`${API_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      localStorage.setItem("admin_token", data.token);
+      document.cookie = `admin_token=${data.token}; path=/; max-age=86400`;
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Invalid credentials");

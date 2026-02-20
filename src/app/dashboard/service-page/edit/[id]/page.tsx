@@ -1,32 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  getAdminServices,
   updateService,
 } from "@/app/services/services.service";
 import { getAdminCategories } from "@/app/services/categories.service";
-import { Loader2, ImagePlus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+
+const MAX_IMAGES = 5;
 
 export default function EditServicePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
-  const imageRef = useRef<HTMLInputElement | null>(null);
-
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [imageName, setImageName] = useState<string>("");
 
   const [form, setForm] = useState({
     title: "",
     long_description: "",
     category_id: "",
-    image_url: "",
   });
+
+  /* =============================
+     GALLERY STATE (5 images)
+  ============================= */
+  const [gallery, setGallery] = useState<
+    { file?: File; preview: string }[]
+  >([]);
 
   /* =============================
      FETCH SERVICE + CATEGORIES
@@ -34,14 +37,14 @@ export default function EditServicePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [services, cats] = await Promise.all([
-          getAdminServices(),
+        const [catsRes, serviceRes] = await Promise.all([
           getAdminCategories(),
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/services/${id}`
+          ).then((r) => r.json()),
         ]);
 
-        const service = services.find(
-          (s: any) => String(s.id) === String(id)
-        );
+        const service = serviceRes?.data;
 
         if (!service) {
           alert("Service not found");
@@ -53,16 +56,17 @@ export default function EditServicePage() {
           title: service.title,
           long_description: service.long_description || "",
           category_id: String(service.category_id),
-          image_url: service.image_url,
         });
 
-        // Extract filename from existing image URL
-        if (service.image_url) {
-          const parts = service.image_url.split("/");
-          setImageName(parts[parts.length - 1]);
-        }
+        // 🔥 Load existing gallery images
+        const existingImages =
+          service.images?.slice(0, 5).map((img: any) => ({
+            preview: img.image_url,
+          })) || [];
 
-        setCategories(cats);
+        setGallery(existingImages);
+
+        setCategories(catsRes);
       } catch (error) {
         console.error(error);
         alert("Failed to load service");
@@ -86,16 +90,24 @@ export default function EditServicePage() {
   };
 
   /* =============================
-     IMAGE HANDLER (IMPROVED)
+     ADD IMAGE
   ============================= */
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleGalleryAdd = (file: File) => {
+    if (gallery.length >= MAX_IMAGES) return;
 
-    setPreview(URL.createObjectURL(file));
-    setImageName(file.name);
+    const newItem = {
+      file,
+      preview: URL.createObjectURL(file),
+    };
+
+    setGallery((prev) => [...prev, newItem]);
+  };
+
+  /* =============================
+     REMOVE IMAGE
+  ============================= */
+  const removeGalleryImage = (index: number) => {
+    setGallery((prev) => prev.filter((_, i) => i !== index));
   };
 
   /* =============================
@@ -103,19 +115,30 @@ export default function EditServicePage() {
   ============================= */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (gallery.length !== 5) {
+      alert("Exactly 5 images are required.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const formData = new FormData();
+
       formData.append("title", form.title);
       formData.append("long_description", form.long_description);
       formData.append("category_id", form.category_id);
 
-      if (imageRef.current?.files?.[0]) {
-        formData.append("image", imageRef.current.files[0]);
-      }
+      // 🔥 Only append files if they are new uploads
+      gallery.forEach((item) => {
+        if (item.file) {
+          formData.append("gallery", item.file);
+        }
+      });
 
       await updateService(Number(id), formData);
+
       router.push("/dashboard/service-page");
     } catch (error) {
       console.error(error);
@@ -134,107 +157,107 @@ export default function EditServicePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-8 space-y-6">
-      {/* HEADER */}
+    <div className="max-w-4xl mx-auto p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">
           Edit Service
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Update service details
+          Update service details & gallery
         </p>
       </div>
 
-      {/* FORM */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-gray-100 p-8 space-y-6"
+        className="bg-white rounded-2xl border p-8 space-y-6"
       >
         {/* TITLE */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Service Title
-          </label>
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2.5 rounded-lg border"
-          />
-        </div>
+        <input
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2.5 rounded-lg border"
+        />
 
         {/* CATEGORY */}
+        <select
+          name="category_id"
+          value={form.category_id}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2.5 rounded-lg border bg-white"
+        >
+          <option value="">Select category</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.title}
+            </option>
+          ))}
+        </select>
+
+        {/* DESCRIPTION */}
+        <textarea
+          name="long_description"
+          value={form.long_description}
+          onChange={handleChange}
+          rows={5}
+          className="w-full px-4 py-2.5 rounded-lg border"
+        />
+
+        {/* GALLERY */}
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Category
-          </label>
-          <select
-            name="category_id"
-            value={form.category_id}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2.5 rounded-lg border bg-white"
-          >
-            <option value="">Select category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.title}
-              </option>
-            ))}
-          </select>
-        </div>
+          <p className="text-sm font-medium mb-3">
+            Gallery Images (Exactly 5 Required)
+          </p>
 
-        {/* IMAGE PICKER */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Service Image
-          </label>
+          <div className="grid grid-cols-5 gap-3">
+            {[0, 1, 2, 3, 4].map((i) => {
+              const item = gallery[i];
 
-          <label
-            htmlFor="image"
-            className="flex items-center gap-3 cursor-pointer rounded-lg border border-dashed p-4 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600"
-          >
-            <ImagePlus size={20} />
-            {imageName ? "Change image" : "Upload image"}
-          </label>
-
-          <input
-            ref={imageRef}
-            id="image"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageChange}
-          />
-
-          {/* FILE NAME */}
-          {imageName && (
-            <p className="mt-2 text-xs text-gray-500 truncate">
-              Selected file: <span className="font-medium">{imageName}</span>
-            </p>
-          )}
-
-          {/* PREVIEW */}
-          <img
-            src={preview || form.image_url}
-            alt="Preview"
-            className="mt-3 h-28 w-28 rounded-lg object-cover border"
-          />
-        </div>
-
-        {/* LONG DESCRIPTION */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Long Description
-          </label>
-          <textarea
-            name="long_description"
-            value={form.long_description}
-            onChange={handleChange}
-            rows={5}
-            className="w-full px-4 py-2.5 rounded-lg border"
-          />
+              return (
+                <div
+                  key={i}
+                  className="relative aspect-square border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden"
+                >
+                  {item ? (
+                    <>
+                      <img
+                        src={item.preview}
+                        className="w-full h-full object-cover"
+                        alt=""
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(i)}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
+                  ) : (
+                    <label className="flex flex-col items-center text-gray-400 cursor-pointer">
+                      <Plus />
+                      <span className="text-[10px]">
+                        Image {i + 1}
+                      </span>
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          handleGalleryAdd(
+                            e.target.files[0]
+                          )
+                        }
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* ACTIONS */}
@@ -252,10 +275,7 @@ export default function EditServicePage() {
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 text-white disabled:opacity-60"
           >
             {loading && (
-              <Loader2
-                size={16}
-                className="animate-spin"
-              />
+              <Loader2 size={16} className="animate-spin" />
             )}
             {loading ? "Saving..." : "Update Service"}
           </button>

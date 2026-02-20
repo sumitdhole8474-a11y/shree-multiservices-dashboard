@@ -15,25 +15,48 @@ export default function AddServicePage() {
     getAdminCategories().then(setCategories);
   }, []);
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
-    e.preventDefault();
-    setLoading(true);
+const handleSubmit = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const formData = new FormData(e.currentTarget);
-      await createService(formData);
+  try {
+    const form = e.currentTarget;
+    const formData = new FormData(form);
 
-      // ✅ Redirect after success
-      router.push("/dashboard/service-page");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to add service");
-    } finally {
+    // 🔥 Make sure file exists
+    const fileInput = form.querySelector(
+      'input[name="image"]'
+    ) as HTMLInputElement;
+
+    if (!fileInput?.files?.length) {
+      alert("Please select an image");
       setLoading(false);
+      return;
     }
-  };
+
+    formData.set("image", fileInput.files[0]); // ensure correct file
+
+    const result = await createService(formData);
+
+    if (!result.success) {
+      alert("Failed to add service");
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Redirect only if backend confirms success
+    router.push("/dashboard/service-page");
+
+  } catch (error) {
+    console.error(error);
+    alert("Failed to add service");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="max-w-3xl mx-auto p-8">
