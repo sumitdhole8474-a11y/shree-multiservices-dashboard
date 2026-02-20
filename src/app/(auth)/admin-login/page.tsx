@@ -32,7 +32,13 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+     let data;
+try {
+  data = await res.json();
+} catch {
+  throw new Error("Server returned invalid response");
+}
+
 
       if (!res.ok) {
         throw new Error(data.message || "Login failed");
