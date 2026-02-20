@@ -1,6 +1,8 @@
 import { getAdminReviews } from "../../services/reviews.service";
 import ReviewRow from "../../components/Reviewrow";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReviewsPage() {
   const reviews = await getAdminReviews();
 

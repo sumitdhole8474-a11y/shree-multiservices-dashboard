@@ -11,6 +11,9 @@ import { Search } from "lucide-react";
 
 type EnquiryStatus = "pending" | "contacted" | "not_interested";
 
+export const dynamic = "force-dynamic";
+
+
 export default function EnquiriesPage() {
   const [enquiries, setEnquiries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
