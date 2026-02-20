@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
         throw new Error("API URL not configured");
       }
 
-      const res = await fetch(`${API_URL}/api/admin/login`, {
+      const res = await fetch(`${API_URL}/api/admin/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
