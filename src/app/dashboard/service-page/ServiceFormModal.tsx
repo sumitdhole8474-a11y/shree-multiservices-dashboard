@@ -10,6 +10,18 @@ import { getAdminCategories } from "@/app/services/categories.service";
 
 const MAX_IMAGES = 5;
 
+type GalleryItem =
+  | {
+      id: number; // existing image from DB
+      preview: string;
+      isExisting: true;
+    }
+  | {
+      file: File; // new uploaded image
+      preview: string;
+      isExisting: false;
+    };
+
 export default function ServiceFormModal({
   service,
   onClose,
@@ -32,11 +44,9 @@ export default function ServiceFormModal({
   });
 
   /* =========================
-     GALLERY STATE (5 images)
+     GALLERY STATE
   ========================= */
-  const [gallery, setGallery] = useState<
-    { file: File; preview: string }[]
-  >([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
 
   /* =========================
      LOAD DATA
@@ -46,10 +56,23 @@ export default function ServiceFormModal({
 
     if (service) {
       setForm({
-        title: service.title,
+        title: service.title || "",
         long_description: service.long_description || "",
-        category_id: String(service.category_id),
+        category_id: String(service.category_id || ""),
       });
+
+      // 🔥 LOAD EXISTING IMAGES
+      if (service.images?.length) {
+        const existingImages = service.images.map((img: any) => ({
+          id: img.id,
+          preview: img.image_url,
+          isExisting: true as const,
+        }));
+
+        setGallery(existingImages);
+      }
+    } else {
+      setGallery([]);
     }
   }, [service]);
 
@@ -59,37 +82,49 @@ export default function ServiceFormModal({
   const handleGalleryAdd = (file: File) => {
     if (gallery.length >= MAX_IMAGES) return;
 
-    const newItem = {
-      file,
-      preview: URL.createObjectURL(file),
-    };
+    const preview = URL.createObjectURL(file);
 
-    setGallery((prev) => [...prev, newItem]);
+    setGallery((prev) => [
+      ...prev,
+      { file, preview, isExisting: false },
+    ]);
   };
 
   /* =========================
      REMOVE IMAGE
   ========================= */
   const removeGalleryImage = (index: number) => {
-    setGallery((prev) => prev.filter((_, i) => i !== index));
+    setGallery((prev) => {
+      const updated = [...prev];
+      const removed = updated.splice(index, 1)[0];
+
+      if (!removed.isExisting) {
+        URL.revokeObjectURL(removed.preview);
+      }
+
+      return updated;
+    });
   };
 
   /* =========================
      DRAG REORDER
   ========================= */
   const handleDragStart = (index: number) => {
-    (window as any).dragIndex = index;
+    (window as any).__dragIndex = index;
   };
 
   const handleDropReorder = (index: number) => {
-    const dragIndex = (window as any).dragIndex;
+    const dragIndex = (window as any).__dragIndex;
     if (dragIndex === undefined) return;
 
-    const updated = [...gallery];
-    const [moved] = updated.splice(dragIndex, 1);
-    updated.splice(index, 0, moved);
+    setGallery((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(dragIndex, 1);
+      updated.splice(index, 0, moved);
+      return updated;
+    });
 
-    setGallery(updated);
+    (window as any).__dragIndex = undefined;
   };
 
   /* =========================
@@ -97,6 +132,11 @@ export default function ServiceFormModal({
   ========================= */
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!form.title || !form.category_id) {
+      alert("Title and category are required.");
+      return;
+    }
 
     if (gallery.length !== 5) {
       alert("Exactly 5 images are required.");
@@ -112,10 +152,16 @@ export default function ServiceFormModal({
       fd.append("long_description", form.long_description);
       fd.append("category_id", form.category_id);
 
-      // 🔥 Append 5 gallery images
-      gallery.forEach((item) => {
-        fd.append("gallery", item.file);
-      });
+      // 🔥 Only append NEW images
+      const newImages = gallery.filter(
+        (item) => !item.isExisting
+      ) as { file: File }[];
+
+      if (!service || newImages.length === 5) {
+        newImages.forEach((item) => {
+          fd.append("gallery", item.file);
+        });
+      }
 
       const result = service
         ? await updateService(service.id, fd)
@@ -141,6 +187,7 @@ export default function ServiceFormModal({
         onSubmit={submit}
         className="bg-white rounded-2xl w-full max-w-xl p-6 space-y-5"
       >
+        {/* HEADER */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">
             {service ? "Edit Service" : "Add Service"}
@@ -192,9 +239,7 @@ export default function ServiceFormModal({
           className="w-full px-4 py-2.5 rounded-lg border"
         />
 
-        {/* ======================
-           GALLERY GRID (5 only)
-        ====================== */}
+        {/* GALLERY */}
         <div>
           <p className="text-sm font-medium mb-3">
             Gallery Images (Exactly 5 Required)
@@ -215,7 +260,7 @@ export default function ServiceFormModal({
                   onDragStart={() =>
                     item && handleDragStart(i)
                   }
-                  className="relative aspect-square border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-500 transition"
+                  className="relative aspect-square border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
                 >
                   {item ? (
                     <>

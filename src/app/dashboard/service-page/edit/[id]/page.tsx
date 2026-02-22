@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  updateService,
-} from "@/app/services/services.service";
+import { updateService } from "@/app/services/services.service";
 import { getAdminCategories } from "@/app/services/categories.service";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const MAX_IMAGES = 5;
 
@@ -25,26 +23,26 @@ export default function EditServicePage() {
   });
 
   /* =============================
-     GALLERY STATE (5 images)
+     GALLERY STATE
   ============================= */
   const [gallery, setGallery] = useState<
     { file?: File; preview: string }[]
-  >([]);
+  >(Array(MAX_IMAGES).fill(null));
 
   /* =============================
-     FETCH SERVICE + CATEGORIES
+     FETCH SERVICE
   ============================= */
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [catsRes, serviceRes] = await Promise.all([
+        const [cats, res] = await Promise.all([
           getAdminCategories(),
           fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/services/${id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/services/${id}`
           ).then((r) => r.json()),
         ]);
 
-        const service = serviceRes?.data;
+        const service = res?.data;
 
         if (!service) {
           alert("Service not found");
@@ -58,15 +56,20 @@ export default function EditServicePage() {
           category_id: String(service.category_id),
         });
 
-        // 🔥 Load existing gallery images
-        const existingImages =
-          service.images?.slice(0, 5).map((img: any) => ({
-            preview: img.image_url,
-          })) || [];
+        // 🔥 Force exactly 5 image slots
+        const images =
+          service.images?.slice(0, 5) || [];
 
-        setGallery(existingImages);
+        const filledGallery = Array(MAX_IMAGES)
+          .fill(null)
+          .map((_, i) =>
+            images[i]
+              ? { preview: images[i].image_url }
+              : { preview: "" }
+          );
 
-        setCategories(catsRes);
+        setGallery(filledGallery);
+        setCategories(cats);
       } catch (error) {
         console.error(error);
         alert("Failed to load service");
@@ -79,7 +82,7 @@ export default function EditServicePage() {
   }, [id, router]);
 
   /* =============================
-     INPUT HANDLER
+     INPUT CHANGE
   ============================= */
   const handleChange = (
     e: React.ChangeEvent<
@@ -90,24 +93,28 @@ export default function EditServicePage() {
   };
 
   /* =============================
-     ADD IMAGE
+     REPLACE IMAGE
   ============================= */
-  const handleGalleryAdd = (file: File) => {
-    if (gallery.length >= MAX_IMAGES) return;
+  const handleReplace = (index: number, file: File) => {
+    const preview = URL.createObjectURL(file);
 
-    const newItem = {
-      file,
-      preview: URL.createObjectURL(file),
-    };
-
-    setGallery((prev) => [...prev, newItem]);
+    setGallery((prev) => {
+      const updated = [...prev];
+      updated[index] = { file, preview };
+      return updated;
+    });
   };
 
   /* =============================
-     REMOVE IMAGE
+     BASE64 TO FILE
   ============================= */
-  const removeGalleryImage = (index: number) => {
-    setGallery((prev) => prev.filter((_, i) => i !== index));
+  const base64ToFile = async (
+    base64: string,
+    filename: string
+  ): Promise<File> => {
+    const res = await fetch(base64);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type });
   };
 
   /* =============================
@@ -116,33 +123,45 @@ export default function EditServicePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (gallery.length !== 5) {
-      alert("Exactly 5 images are required.");
+    if (gallery.some((g) => !g.preview)) {
+      alert("All 5 images must be present.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const formData = new FormData();
+      const fd = new FormData();
 
-      formData.append("title", form.title);
-      formData.append("long_description", form.long_description);
-      formData.append("category_id", form.category_id);
+      fd.append("title", form.title);
+      fd.append("long_description", form.long_description);
+      fd.append("category_id", form.category_id);
 
-      // 🔥 Only append files if they are new uploads
-      gallery.forEach((item) => {
+      for (let i = 0; i < gallery.length; i++) {
+        const item = gallery[i];
+
         if (item.file) {
-          formData.append("gallery", item.file);
+          fd.append("gallery", item.file);
+        } else {
+          const file = await base64ToFile(
+            item.preview,
+            `image-${i}.jpg`
+          );
+          fd.append("gallery", file);
         }
-      });
+      }
 
-      await updateService(Number(id), formData);
+      const result = await updateService(Number(id), fd);
+
+      if (!result.success) {
+        alert(result.message || "Update failed");
+        return;
+      }
 
       router.push("/dashboard/service-page");
     } catch (error) {
       console.error(error);
-      alert("Failed to update service");
+      alert("Update failed");
     } finally {
       setLoading(false);
     }
@@ -158,20 +177,14 @@ export default function EditServicePage() {
 
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Edit Service
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Update service details & gallery
-        </p>
-      </div>
+      <h1 className="text-2xl font-semibold">
+        Edit Service
+      </h1>
 
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl border p-8 space-y-6"
       >
-        {/* TITLE */}
         <input
           name="title"
           value={form.title}
@@ -180,7 +193,6 @@ export default function EditServicePage() {
           className="w-full px-4 py-2.5 rounded-lg border"
         />
 
-        {/* CATEGORY */}
         <select
           name="category_id"
           value={form.category_id}
@@ -196,7 +208,6 @@ export default function EditServicePage() {
           ))}
         </select>
 
-        {/* DESCRIPTION */}
         <textarea
           name="long_description"
           value={form.long_description}
@@ -205,63 +216,41 @@ export default function EditServicePage() {
           className="w-full px-4 py-2.5 rounded-lg border"
         />
 
-        {/* GALLERY */}
-        <div>
-          <p className="text-sm font-medium mb-3">
-            Gallery Images (Exactly 5 Required)
-          </p>
+        {/* 5 IMAGE BOXES */}
+        <div className="grid grid-cols-5 gap-3">
+          {gallery.map((item, i) => (
+            <div
+              key={i}
+              className="relative aspect-square border rounded-xl overflow-hidden"
+            >
+              {item.preview && (
+                <img
+                  src={item.preview}
+                  className="w-full h-full object-cover"
+                  alt=""
+                />
+              )}
 
-          <div className="grid grid-cols-5 gap-3">
-            {[0, 1, 2, 3, 4].map((i) => {
-              const item = gallery[i];
-
-              return (
-                <div
-                  key={i}
-                  className="relative aspect-square border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden"
-                >
-                  {item ? (
-                    <>
-                      <img
-                        src={item.preview}
-                        className="w-full h-full object-cover"
-                        alt=""
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeGalleryImage(i)}
-                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </>
-                  ) : (
-                    <label className="flex flex-col items-center text-gray-400 cursor-pointer">
-                      <Plus />
-                      <span className="text-[10px]">
-                        Image {i + 1}
-                      </span>
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/*"
-                        onChange={(e) =>
-                          e.target.files?.[0] &&
-                          handleGalleryAdd(
-                            e.target.files[0]
-                          )
-                        }
-                      />
-                    </label>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+              <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 cursor-pointer text-white text-xs">
+                Change
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) =>
+                    e.target.files?.[0] &&
+                    handleReplace(
+                      i,
+                      e.target.files[0]
+                    )
+                  }
+                />
+              </label>
+            </div>
+          ))}
         </div>
 
-        {/* ACTIONS */}
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={() => router.back()}
@@ -272,12 +261,19 @@ export default function EditServicePage() {
 
           <button
             disabled={loading}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 text-white disabled:opacity-60"
+            className="px-6 py-2.5 rounded-lg bg-blue-600 text-white disabled:opacity-60"
           >
-            {loading && (
-              <Loader2 size={16} className="animate-spin" />
+            {loading ? (
+              <>
+                <Loader2
+                  size={16}
+                  className="animate-spin inline mr-2"
+                />
+                Saving...
+              </>
+            ) : (
+              "Update Service"
             )}
-            {loading ? "Saving..." : "Update Service"}
           </button>
         </div>
       </form>

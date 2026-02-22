@@ -3,13 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import ServicesTable from "./ServicesTable";
 import ServiceFormModal from "./ServiceFormModal";
-import { getAdminServices } from "@/app/services/services.service";
+import {
+  getAdminServices,
+  getAdminServiceById, // ✅ added
+} from "@/app/services/services.service";
 
 export default function ServicePage() {
   const [services, setServices] = useState<any[]>([]);
   const [formService, setFormService] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editLoading, setEditLoading] = useState(false); // ✅ new
 
   /* =====================================
      LOAD SERVICES
@@ -20,7 +24,6 @@ export default function ServicePage() {
 
       const data = await getAdminServices();
 
-      // Always ensure array
       setServices(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to load services:", error);
@@ -43,13 +46,28 @@ export default function ServicePage() {
   };
 
   /* =====================================
-     HANDLE EDIT
-     (If you're using separate Edit Page,
-      you may remove modal editing)
+     HANDLE EDIT (🔥 FIXED)
+     Fetch full service including images
   ===================================== */
-  const handleEdit = (service: any) => {
-    setFormService(service);
-    setShowForm(true);
+  const handleEdit = async (service: any) => {
+    try {
+      setEditLoading(true);
+
+      const fullService = await getAdminServiceById(service.id);
+
+      if (!fullService) {
+        alert("Failed to load service details");
+        return;
+      }
+
+      setFormService(fullService);
+      setShowForm(true);
+    } catch (error) {
+      console.error("Failed to fetch service:", error);
+      alert("Something went wrong while loading service");
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   /* =====================================
@@ -78,7 +96,7 @@ export default function ServicePage() {
       ============================ */}
       <ServicesTable
         services={services}
-        loading={loading}
+        loading={loading || editLoading}
         onRefresh={load}
         onAdd={handleAdd}
         onEdit={handleEdit}

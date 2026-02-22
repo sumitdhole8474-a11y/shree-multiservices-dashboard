@@ -32,30 +32,46 @@ export default function ServicesTable({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showFilter, setShowFilter] = useState(false);
 
-  /* DELETE MODAL STATE */
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  /* UNIQUE CATEGORIES */
+  /* =============================
+     SAFE IMAGE CHECK
+  ============================== */
+  const isBase64 = (src?: string) =>
+    typeof src === "string" && src.startsWith("data:image/");
+
+  /* =============================
+     UNIQUE CATEGORIES
+  ============================== */
   const categories = useMemo(() => {
     const set = new Set<string>();
-    services.forEach((s) => set.add(s.category));
+    services.forEach((s) => {
+      if (s?.category) set.add(s.category);
+    });
     return Array.from(set);
   }, [services]);
 
-  /* FILTERED SERVICES */
+  /* =============================
+     FILTERED SERVICES
+  ============================== */
   const filteredServices = services.filter((s) => {
-    const matchesSearch = `${s.title} ${s.category}`
+    const title = s?.title || "";
+    const category = s?.category || "";
+
+    const matchesSearch = `${title} ${category}`
       .toLowerCase()
       .includes(search.toLowerCase());
 
     const matchesCategory =
-      categoryFilter === "all" || s.category === categoryFilter;
+      categoryFilter === "all" || category === categoryFilter;
 
     return matchesSearch && matchesCategory;
   });
 
-  /* CONFIRM DELETE */
+  /* =============================
+     CONFIRM DELETE
+  ============================== */
   const confirmDelete = async () => {
     if (!deleteTarget) return;
 
@@ -221,11 +237,18 @@ export default function ServicesTable({
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <img
-                          src={s.image_url}
-                          alt={s.title}
-                          className="h-12 w-12 rounded-lg object-cover border"
-                        />
+                        {s.image_url ? (
+                          <img
+                            src={s.image_url}
+                            alt={s.title}
+                            className="h-12 w-12 rounded-lg object-cover border"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-lg border flex items-center justify-center text-xs text-gray-400">
+                            No Img
+                          </div>
+                        )}
+
                         <div>
                           <p className="font-medium">{s.title}</p>
                           <p className="text-xs text-gray-500">
@@ -237,12 +260,14 @@ export default function ServicesTable({
 
                     <td className="px-6 py-4">
                       <span className="inline-flex px-3 py-1 rounded-full text-xs bg-blue-50 text-blue-600">
-                        {s.category}
+                        {s.category || "Uncategorized"}
                       </span>
                     </td>
 
                     <td className="px-6 py-4 text-gray-500">
-                      {new Date(s.created_at).toLocaleDateString()}
+                      {s.created_at
+                        ? new Date(s.created_at).toLocaleDateString()
+                        : "-"}
                     </td>
 
                     <td className="px-6 py-4">

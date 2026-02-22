@@ -1,6 +1,10 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL;
 
+if (!API_BASE_URL) {
+  console.warn("⚠️ NEXT_PUBLIC_API_URL is not defined");
+}
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -8,7 +12,12 @@ const API_BASE_URL =
 export interface AdminService {
   id: number;
   title: string;
-  image_url?: string; // first image from service_images
+  image_url?: string; // first image (for table preview)
+  images?: {
+    id: number; // ✅ needed for delete/swap
+    image_url: string;
+    sort_order: number;
+  }[];
   short_description?: string;
   long_description?: string;
   category_id: number;
@@ -48,17 +57,48 @@ export const getAdminServices = async (): Promise<AdminService[]> => {
     const json = await safeJson(res);
 
     if (json?.success && Array.isArray(json.data)) {
-      return json.data;
+      return json.data as AdminService[];
     }
 
     if (Array.isArray(json)) {
-      return json;
+      return json as AdminService[];
     }
 
     return [];
   } catch (error) {
     console.error("❌ getAdminServices error:", error);
     return [];
+  }
+};
+
+/* =========================================================
+   GET SINGLE SERVICE (FOR EDIT FORM)
+========================================================= */
+
+export const getAdminServiceById = async (
+  id: number
+): Promise<AdminService | null> => {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/admin/services/${id}`,
+      { cache: "no-store" }
+    );
+
+    if (!res.ok) {
+      console.warn("⚠️ getAdminServiceById failed:", res.status);
+      return null;
+    }
+
+    const json = await safeJson(res);
+
+    if (json?.success && json.data) {
+      return json.data as AdminService;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("❌ getAdminServiceById error:", error);
+    return null;
   }
 };
 
@@ -71,7 +111,6 @@ export const createService = async (
   formData: FormData
 ): Promise<{ success: boolean; message?: string }> => {
   try {
-    // 🔥 Validate gallery images before sending
     const galleryFiles = formData.getAll("gallery");
 
     if (galleryFiles.length !== 5) {
@@ -124,7 +163,8 @@ export const updateService = async (
     if (galleryFiles.length > 0 && galleryFiles.length !== 5) {
       return {
         success: false,
-        message: "Exactly 5 images are required when updating gallery",
+        message:
+          "Exactly 5 images are required when updating gallery",
       };
     }
 
@@ -170,6 +210,7 @@ export const deleteService = async (
     );
 
     if (!res.ok) {
+      console.warn("⚠️ deleteService failed:", res.status);
       return { success: false };
     }
 
@@ -195,6 +236,7 @@ export const toggleServiceStatus = async (
     );
 
     if (!res.ok) {
+      console.warn("⚠️ toggleServiceStatus failed:", res.status);
       return { success: false };
     }
 
