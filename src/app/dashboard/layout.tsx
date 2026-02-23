@@ -17,6 +17,7 @@ import {
   Bell,
   User,
   LogOut,
+  Phone,
 } from "lucide-react";
 
 import {
@@ -118,6 +119,7 @@ export default function DashboardLayout({
     { name: "Reviews", path: "/dashboard/reviews", icon: <Star size={20} /> },
     { name: "Enquiries", path: "/dashboard/enquiries", icon: <MessageSquare size={20} /> },
     { name: "Support", path: "/dashboard/support", icon: <Headphones size={20} /> },
+     { name: "Contact", path: "/dashboard/contact", icon: <Phone size={20} /> },
     { name: "Help Center", path: "/dashboard/help-centre", icon: <HelpCircle size={20} /> },
   ];
 
