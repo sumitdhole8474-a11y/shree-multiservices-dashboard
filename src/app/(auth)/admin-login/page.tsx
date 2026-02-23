@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
+import logoImg from "@/assets/Logo.png";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -69,7 +70,7 @@ try {
           {/* LEFT */}
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-6">
-              <Image src="/logo.png" alt="Logo" width={48} height={48} />
+              <Image src={logoImg} alt="Logo" width={80} height={80} />
             </div>
 
             <h1 className="text-3xl font-semibold text-gray-800">
