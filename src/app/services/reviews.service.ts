@@ -12,6 +12,7 @@ export const getAdminReviews = async () => {
 
     const res = await fetch(`${API_URL}/api/admin/reviews`, {
       cache: "no-store",
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -35,7 +36,10 @@ export const createAdminReview = async (data: {
   review: string;
   rating: number;
   is_hidden?: boolean;
-}): Promise<{ success: boolean }> => {
+}): Promise<{
+  success: boolean;
+  review?: any;
+}> => {
   try {
     if (!API_URL) {
       console.warn("⚠️ NEXT_PUBLIC_API_URL not defined");
@@ -47,15 +51,21 @@ export const createAdminReview = async (data: {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(data),
     });
+
+    const responseData = await res.json();
 
     if (!res.ok) {
       console.warn("⚠️ createAdminReview failed:", res.status);
       return { success: false };
     }
 
-    return { success: true };
+    return {
+      success: true,
+      review: responseData.review, // ✅ now properly returned
+    };
   } catch (error) {
     console.error("❌ createAdminReview error:", error);
     return { success: false };
@@ -78,6 +88,7 @@ export const deleteReview = async (
       `${API_URL}/api/admin/reviews/${id}`,
       {
         method: "DELETE",
+        credentials: "include",
       }
     );
 
@@ -109,6 +120,7 @@ export const toggleHideReview = async (
       `${API_URL}/api/admin/reviews/${id}/hide`,
       {
         method: "PATCH",
+        credentials: "include",
       }
     );
 
