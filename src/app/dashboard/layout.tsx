@@ -19,7 +19,7 @@ import {
   LogOut,
   Phone,
 } from "lucide-react";
-
+import LogoImg from "@/assets/Logo.png";
 import {
   getNotifications,
   markNotificationsSeen,
@@ -139,7 +139,7 @@ export default function DashboardLayout({
 
             <div className="relative h-9 w-9 rounded-full overflow-hidden border border-gray-200">
               <Image
-                src="/logo.png"
+                src={LogoImg}
                 alt="Shree Multiservices"
                 fill
                 className="object-cover"
