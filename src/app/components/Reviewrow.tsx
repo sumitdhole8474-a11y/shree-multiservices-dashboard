@@ -5,12 +5,13 @@ import {
   deleteReview,
   toggleHideReview,
 } from "../services/reviews.service";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function ReviewRow({ review }: any) {
-  const router = useRouter();
-
+export default function ReviewRow({
+  review,
+  onDelete,
+  onToggle,
+}: any) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -18,9 +19,14 @@ export default function ReviewRow({ review }: any) {
   const handleDelete = async () => {
     try {
       setDeleting(true);
-      await deleteReview(review.id);
-      setShowDeleteModal(false);
-      router.refresh();
+      const res = await deleteReview(review.id);
+
+      if (res.success) {
+        onDelete(review.id); // ✅ update parent state
+        setShowDeleteModal(false);
+      } else {
+        alert("Failed to delete review");
+      }
     } catch (error) {
       console.error("Delete failed:", error);
       alert("Failed to delete review");
@@ -31,8 +37,13 @@ export default function ReviewRow({ review }: any) {
 
   /* ================= HIDE ================= */
   const handleHide = async () => {
-    await toggleHideReview(review.id);
-    router.refresh();
+    const res = await toggleHideReview(review.id);
+
+    if (res.success) {
+      onToggle(review.id); // ✅ update parent state
+    } else {
+      alert("Failed to update review");
+    }
   };
 
   return (
@@ -52,7 +63,6 @@ export default function ReviewRow({ review }: any) {
               {review.name}
             </h3>
 
-            {/* MOBILE NUMBER */}
             <p className="text-xs text-gray-600 mt-0.5">
               📞 {review.mobile}
             </p>
@@ -62,7 +72,6 @@ export default function ReviewRow({ review }: any) {
             </p>
           </div>
 
-          {/* STATUS BADGE */}
           <span
             className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
               review.is_hidden
