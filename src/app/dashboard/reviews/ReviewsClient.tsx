@@ -18,7 +18,7 @@ export default function ReviewsClient({ initialReviews }: any) {
   });
 
   /* =============================
-     HANDLE CREATE REVIEW (FIXED)
+     HANDLE CREATE REVIEW
   ============================= */
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -26,7 +26,6 @@ export default function ReviewsClient({ initialReviews }: any) {
     const res = await createAdminReview(form);
 
     if (res.success && res.review) {
-      // ✅ Use real DB review instead of fake ID
       setReviews((prev: any[]) => [
         res.review,
         ...prev,
@@ -47,7 +46,7 @@ export default function ReviewsClient({ initialReviews }: any) {
   };
 
   /* =============================
-     HANDLE TOGGLE (Hide/Publish)
+     HANDLE TOGGLE
   ============================= */
   const handleToggle = (id: number) => {
     setReviews((prev: any[]) =>
@@ -127,24 +126,46 @@ export default function ReviewsClient({ initialReviews }: any) {
                 }
               />
 
+              {/* ✅ MOBILE - NUMBERS ONLY + 10 LIMIT */}
               <input
                 placeholder="Mobile (optional)"
                 className="w-full border p-2 rounded"
                 value={form.mobile}
-                onChange={(e) =>
-                  setForm({ ...form, mobile: e.target.value })
-                }
+                maxLength={10}
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value.replace(/\D/g, "");
+                  setForm({
+                    ...form,
+                    mobile: onlyNumbers.slice(0, 10),
+                  });
+                }}
               />
 
-              <textarea
-                required
-                placeholder="Review message"
-                className="w-full border p-2 rounded"
-                value={form.review}
-                onChange={(e) =>
-                  setForm({ ...form, review: e.target.value })
-                }
-              />
+              {/* ✅ REVIEW - 200 CHARACTER LIMIT */}
+              <div>
+                <textarea
+                  required
+                  placeholder="Review message"
+                  className="w-full border p-2 rounded"
+                  maxLength={200}
+                  value={form.review}
+                  onChange={(e) =>
+                    setForm({ ...form, review: e.target.value })
+                  }
+                />
+
+                <div className="flex justify-end">
+                  <span
+                    className={`text-xs mt-1 ${
+                      form.review.length >= 200
+                        ? "text-red-500"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {form.review.length}/200
+                  </span>
+                </div>
+              </div>
 
               {/* ⭐ STAR RATING */}
               <div>
@@ -171,7 +192,7 @@ export default function ReviewsClient({ initialReviews }: any) {
                 </div>
               </div>
 
-              {/* 🔘 ROUND PUBLISH / HIDDEN SWITCH */}
+              {/* STATUS */}
               <div>
                 <p className="text-sm font-medium mb-2">Status</p>
 
