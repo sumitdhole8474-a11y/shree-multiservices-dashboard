@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createAdminReview, getAdminReviews } from "../../services/reviews.service";
+import { createAdminReview } from "../../services/reviews.service";
 import ReviewRow from "../../components/Reviewrow";
 import { Plus } from "lucide-react";
 
@@ -26,10 +26,18 @@ export default function ReviewsClient({ initialReviews }: any) {
     const res = await createAdminReview(form);
 
     if (res.success) {
-      const updated = await getAdminReviews();
-      setReviews(updated);
+      // Optimistically add new review on top
+      setReviews((prev: any[]) => [
+        {
+          ...form,
+          id: Date.now(), // temporary ID until reload
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
 
       setIsOpen(false);
+
       setForm({
         name: "",
         mobile: "",
@@ -40,6 +48,26 @@ export default function ReviewsClient({ initialReviews }: any) {
     } else {
       alert("Failed to create review");
     }
+  };
+
+  /* =============================
+     HANDLE TOGGLE (Hide/Publish)
+  ============================= */
+  const handleToggle = (id: number) => {
+    setReviews((prev: any[]) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, is_hidden: !r.is_hidden } : r
+      )
+    );
+  };
+
+  /* =============================
+     HANDLE DELETE
+  ============================= */
+  const handleDelete = (id: number) => {
+    setReviews((prev: any[]) =>
+      prev.filter((r) => r.id !== id)
+    );
   };
 
   return (
@@ -68,7 +96,12 @@ export default function ReviewsClient({ initialReviews }: any) {
       {reviews.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {reviews.map((review: any) => (
-            <ReviewRow key={review.id} review={review} />
+            <ReviewRow
+              key={review.id}
+              review={review}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       ) : (
