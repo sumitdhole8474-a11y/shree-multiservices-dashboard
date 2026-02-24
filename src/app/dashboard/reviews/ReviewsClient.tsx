@@ -21,11 +21,11 @@ export default function ReviewsClient({ initialReviews }: any) {
   ============================= */
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
-    const res = await createAdminReview({
-      ...form,
-      is_hidden: false, // ✅ force publish
-    });
+const res = await createAdminReview({
+  name: form.name,
+  review: form.review,
+  rating: form.rating,
+});
 
     if (res.success && res.review) {
       setReviews((prev: any[]) => [

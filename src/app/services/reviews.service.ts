@@ -27,15 +27,14 @@ export const getAdminReviews = async () => {
   }
 };
 
+
 /* =============================
    CREATE REVIEW (ADMIN)
 ============================= */
 export const createAdminReview = async (data: {
   name: string;
-  mobile?: string;
   review: string;
   rating: number;
-  is_hidden?: boolean;
 }): Promise<{
   success: boolean;
   review?: any;
@@ -52,7 +51,13 @@ export const createAdminReview = async (data: {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        name: data.name,
+        review: data.review,
+        rating: data.rating,
+        // ✅ mobile removed
+        // ✅ is_hidden handled by backend (always false)
+      }),
     });
 
     const responseData = await res.json();
@@ -64,13 +69,14 @@ export const createAdminReview = async (data: {
 
     return {
       success: true,
-      review: responseData.review, // ✅ now properly returned
+      review: responseData.review, // ✅ real DB review
     };
   } catch (error) {
     console.error("❌ createAdminReview error:", error);
     return { success: false };
   }
 };
+
 
 /* =============================
    DELETE REVIEW
@@ -104,12 +110,13 @@ export const deleteReview = async (
   }
 };
 
+
 /* =============================
    HIDE / UNHIDE REVIEW
 ============================= */
 export const toggleHideReview = async (
   id: number
-): Promise<{ success: boolean }> => {
+): Promise<{ success: boolean; is_hidden?: boolean }> => {
   try {
     if (!API_URL) {
       console.warn("⚠️ NEXT_PUBLIC_API_URL not defined");
@@ -124,12 +131,17 @@ export const toggleHideReview = async (
       }
     );
 
+    const data = await res.json();
+
     if (!res.ok) {
       console.warn("⚠️ toggleHideReview failed:", res.status);
       return { success: false };
     }
 
-    return { success: true };
+    return {
+      success: true,
+      is_hidden: data.is_hidden, // ✅ now returns actual DB state
+    };
   } catch (error) {
     console.error("❌ toggleHideReview error:", error);
     return { success: false };
