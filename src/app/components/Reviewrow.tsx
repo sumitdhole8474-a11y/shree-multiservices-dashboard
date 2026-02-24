@@ -22,7 +22,7 @@ export default function ReviewRow({
       const res = await deleteReview(review.id);
 
       if (res.success) {
-        onDelete(review.id); // ✅ update parent state
+        onDelete(review.id);
         setShowDeleteModal(false);
       } else {
         alert("Failed to delete review");
@@ -40,7 +40,7 @@ export default function ReviewRow({
     const res = await toggleHideReview(review.id);
 
     if (res.success) {
-      onToggle(review.id); // ✅ update parent state
+      onToggle(review.id);
     } else {
       alert("Failed to update review");
     }
@@ -102,6 +102,15 @@ export default function ReviewRow({
         <p className="text-sm text-gray-700 leading-relaxed mb-14 line-clamp-5">
           {review.review}
         </p>
+
+        {/* ✅ GOOGLE ICON (Bottom Left) */}
+        <div className="absolute bottom-4 left-4">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg"
+            alt="Google"
+            className="w-6 h-6 object-contain"
+          />
+        </div>
 
         {/* ================= ACTION BUTTONS ================= */}
         <div className="absolute bottom-4 right-4 flex gap-2">
