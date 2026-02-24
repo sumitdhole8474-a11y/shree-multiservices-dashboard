@@ -19,7 +19,6 @@ import {
   LogOut,
   Phone,
 } from "lucide-react";
-import logoImg from "@/assets/Logo.png";
 
 import {
   getNotifications,
@@ -46,29 +45,13 @@ export default function DashboardLayout({
     total: 0,
   });
 
+  // Refs for click outside detection
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
   const toggleSidebar = () => setIsSidebarExpanded((v) => !v);
-
-  /* =============================
-     🔒 AUTO LOGOUT ON TAB CLOSE
-  ============================= */
-  useEffect(() => {
-    const handleTabClose = () => {
-      document.cookie =
-        "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-      localStorage.removeItem("admin_token");
-    };
-
-    window.addEventListener("beforeunload", handleTabClose);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleTabClose);
-    };
-  }, []);
 
   /* =============================
      LOAD NOTIFICATIONS
@@ -89,6 +72,7 @@ export default function DashboardLayout({
   ============================= */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Close notifications if clicked outside
       if (
         showNotifications &&
         notificationRef.current &&
@@ -99,6 +83,7 @@ export default function DashboardLayout({
         setShowNotifications(false);
       }
 
+      // Close profile menu if clicked outside
       if (
         showProfileMenu &&
         profileRef.current &&
@@ -134,7 +119,7 @@ export default function DashboardLayout({
     { name: "Reviews", path: "/dashboard/reviews", icon: <Star size={20} /> },
     { name: "Enquiries", path: "/dashboard/enquiries", icon: <MessageSquare size={20} /> },
     { name: "Support", path: "/dashboard/support", icon: <Headphones size={20} /> },
-    { name: "Contact", path: "/dashboard/contact", icon: <Phone size={20} /> },
+     { name: "Contact", path: "/dashboard/contact", icon: <Phone size={20} /> },
     { name: "Help Center", path: "/dashboard/help-centre", icon: <HelpCircle size={20} /> },
   ];
 
@@ -143,6 +128,7 @@ export default function DashboardLayout({
       {/* ================= TOPBAR ================= */}
       <header className="h-16 bg-white shadow-sm fixed top-0 w-full z-50 flex flex-col">
         <div className="flex-1 flex items-center justify-between px-4">
+          {/* LEFT */}
           <div className="flex items-center gap-3">
             <button
               onClick={toggleSidebar}
@@ -153,7 +139,7 @@ export default function DashboardLayout({
 
             <div className="relative h-9 w-9 rounded-full overflow-hidden border border-gray-200">
               <Image
-                src={logoImg}
+                src="/logo.png"
                 alt="Shree Multiservices"
                 fill
                 className="object-cover"
@@ -165,7 +151,9 @@ export default function DashboardLayout({
             </span>
           </div>
 
+          {/* RIGHT */}
           <div className="flex items-center gap-4 relative">
+            {/* 🔔 NOTIFICATIONS */}
             <div className="relative">
               <button
                 ref={notificationButtonRef}
@@ -180,6 +168,7 @@ export default function DashboardLayout({
                 )}
               </button>
 
+              {/* NOTIFICATION DROPDOWN */}
               {showNotifications && (
                 <div
                   ref={notificationRef}
@@ -240,6 +229,7 @@ export default function DashboardLayout({
               )}
             </div>
 
+            {/* 👤 PROFILE */}
             <div className="relative">
               <button
                 ref={profileButtonRef}
@@ -249,6 +239,7 @@ export default function DashboardLayout({
                 <User size={18} />
               </button>
 
+              {/* PROFILE DROPDOWN */}
               {showProfileMenu && (
                 <div
                   ref={profileRef}
@@ -270,6 +261,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
+        {/* COLOR STRIP */}
         <div className="h-1 flex w-full">
           <div className="w-1/3 bg-yellow-400"></div>
           <div className="w-1/3 bg-blue-600"></div>
@@ -277,11 +269,14 @@ export default function DashboardLayout({
         </div>
       </header>
 
+      {/* ================= MAIN ================= */}
       <div className="flex pt-16 h-screen overflow-hidden">
         <aside
-          className={`bg-white border-r border-gray-200 h-full overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out z-40 ${
-            isSidebarExpanded ? "w-56" : "w-16"
-          } hidden md:flex flex-col`}
+          className={`
+            bg-white border-r border-gray-200 h-full overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out z-40
+            ${isSidebarExpanded ? "w-56" : "w-16"}
+            hidden md:flex flex-col
+          `}
         >
           <nav className="py-4 space-y-1 flex flex-col pr-3">
             {navItems.map((item) => {
@@ -290,21 +285,22 @@ export default function DashboardLayout({
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`group flex items-center transition-all duration-300 relative hover:-translate-y-[2px] hover:shadow-sm ${
-                    isSidebarExpanded
-                      ? "px-5 py-2.5 gap-3 w-full rounded-r-full"
-                      : "p-2.5 justify-center w-full rounded-full ml-2"
-                  } ${
-                    isActive
-                      ? "bg-blue-100/50 text-blue-700 font-semibold"
-                      : "text-slate-600 hover:bg-gray-100/80 hover:text-gray-900"
-                  }`}
+                  className={`
+                    group flex items-center transition-all duration-300 relative
+                    hover:-translate-y-[2px] hover:shadow-sm
+                    ${
+                      isSidebarExpanded
+                        ? "px-5 py-2.5 gap-3 w-full rounded-r-full"
+                        : "p-2.5 justify-center w-full rounded-full ml-2"
+                    }
+                    ${
+                      isActive
+                        ? "bg-blue-100/50 text-blue-700 font-semibold"
+                        : "text-slate-600 hover:bg-gray-100/80 hover:text-gray-900"
+                    }
+                  `}
                 >
-                  <div
-                    className={`shrink-0 ${
-                      isActive ? "text-blue-700" : "text-slate-500"
-                    }`}
-                  >
+                  <div className={`shrink-0 ${isActive ? "text-blue-700" : "text-slate-500"}`}>
                     {item.icon}
                   </div>
 
@@ -326,6 +322,7 @@ export default function DashboardLayout({
         </main>
       </div>
 
+      {/* ================= LOGOUT MODAL ================= */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[999] bg-black/40 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl text-center">
