@@ -45,7 +45,7 @@ try {
         throw new Error(data.message || "Login failed");
       }
 
-      document.cookie = `admin_token=${data.token}; path=/`;
+    if (!document.cookie.includes("admin_token"))
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Invalid credentials");
