@@ -81,7 +81,7 @@ export default function DashboardContactPage() {
 
       if (!res.ok) throw new Error();
 
-      setSuccess("Contact details updated successfully 🎉");
+      setSuccess("Contact details updated successfully");
     } catch {
       alert("Failed to update contact details");
     } finally {
@@ -103,7 +103,7 @@ export default function DashboardContactPage() {
       {/* HEADER */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-          Contact Settings
+          Contact Information
         </h1>
         <p className="text-slate-500 mt-2">
           Update your website contact information
