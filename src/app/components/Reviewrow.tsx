@@ -45,12 +45,14 @@ export default function ReviewRow({ review }: any) {
             : "hover:shadow-md hover:border-gray-300"
         }`}
       >
+        {/* ================= HEADER ================= */}
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {review.name}
             </h3>
 
+            {/* MOBILE NUMBER */}
             <p className="text-xs text-gray-600 mt-0.5">
               📞 {review.mobile}
             </p>
@@ -60,6 +62,7 @@ export default function ReviewRow({ review }: any) {
             </p>
           </div>
 
+          {/* STATUS BADGE */}
           <span
             className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
               review.is_hidden
@@ -71,6 +74,7 @@ export default function ReviewRow({ review }: any) {
           </span>
         </div>
 
+        {/* ================= RATING ================= */}
         <div className="flex items-center gap-1 mb-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <Star
@@ -85,13 +89,16 @@ export default function ReviewRow({ review }: any) {
           ))}
         </div>
 
+        {/* ================= REVIEW TEXT ================= */}
         <p className="text-sm text-gray-700 leading-relaxed mb-14 line-clamp-5">
           {review.review}
         </p>
 
+        {/* ================= ACTION BUTTONS ================= */}
         <div className="absolute bottom-4 right-4 flex gap-2">
           <button
             onClick={handleHide}
+            title={review.is_hidden ? "Unhide Review" : "Hide Review"}
             className="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 transition"
           >
             {review.is_hidden ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -99,6 +106,7 @@ export default function ReviewRow({ review }: any) {
 
           <button
             onClick={() => setShowDeleteModal(true)}
+            title="Delete Review"
             className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
           >
             <Trash2 size={16} />
