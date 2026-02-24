@@ -58,19 +58,9 @@ export default function ReviewRow({
       >
         {/* ================= HEADER ================= */}
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
-              {review.name}
-            </h3>
-
-            <p className="text-xs text-gray-600 mt-0.5">
-              📞 {review.mobile}
-            </p>
-
-            <p className="text-xs text-gray-500 mt-1">
-              {new Date(review.created_at).toLocaleString()}
-            </p>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 truncate">
+            {review.name}
+          </h3>
 
           <span
             className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -102,33 +92,6 @@ export default function ReviewRow({
         <p className="text-sm text-gray-700 leading-relaxed mb-14 line-clamp-5">
           {review.review}
         </p>
-
-        {/* ✅ GOOGLE "G" ICON - Bottom Left (SVG) */}
-        <div className="absolute bottom-4 left-4">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 48 48"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill="#EA4335"
-              d="M24 9.5c3.54 0 6.71 1.22 9.2 3.6l6.9-6.9C35.5 2.4 30.2 0 24 0 14.7 0 6.7 5.5 2.8 13.5l8.1 6.3C13 13 18 9.5 24 9.5z"
-            />
-            <path
-              fill="#4285F4"
-              d="M46.1 24.5c0-1.7-.1-3.3-.4-4.8H24v9.1h12.4c-.5 2.7-2 5-4.2 6.6l6.5 5C42.8 36.5 46.1 31 46.1 24.5z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M10.9 28.8c-.5-1.4-.8-2.9-.8-4.3s.3-2.9.8-4.3l-8.1-6.3C1 17.3 0 20.6 0 24s1 6.7 2.8 10.1l8.1-6.3z"
-            />
-            <path
-              fill="#34A853"
-              d="M24 48c6.5 0 12-2.1 16-5.7l-6.5-5c-2 1.4-4.6 2.2-9.5 2.2-6 0-11-3.5-13.1-8.5l-8.1 6.3C6.7 42.5 14.7 48 24 48z"
-            />
-          </svg>
-        </div>
 
         {/* ================= ACTION BUTTONS ================= */}
         <div className="absolute bottom-4 right-4 flex gap-2">

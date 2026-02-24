@@ -11,10 +11,9 @@ export default function ReviewsClient({ initialReviews }: any) {
 
   const [form, setForm] = useState({
     name: "",
-    mobile: "",
     review: "",
     rating: 5,
-    is_hidden: false,
+    is_hidden: false, // ✅ Always published by default
   });
 
   /* =============================
@@ -23,7 +22,10 @@ export default function ReviewsClient({ initialReviews }: any) {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    const res = await createAdminReview(form);
+    const res = await createAdminReview({
+      ...form,
+      is_hidden: false, // ✅ force publish
+    });
 
     if (res.success && res.review) {
       setReviews((prev: any[]) => [
@@ -35,7 +37,6 @@ export default function ReviewsClient({ initialReviews }: any) {
 
       setForm({
         name: "",
-        mobile: "",
         review: "",
         rating: 5,
         is_hidden: false,
@@ -126,21 +127,6 @@ export default function ReviewsClient({ initialReviews }: any) {
                 }
               />
 
-              {/* ✅ MOBILE - NUMBERS ONLY + 10 LIMIT */}
-              <input
-                placeholder="Mobile (optional)"
-                className="w-full border p-2 rounded"
-                value={form.mobile}
-                maxLength={10}
-                onChange={(e) => {
-                  const onlyNumbers = e.target.value.replace(/\D/g, "");
-                  setForm({
-                    ...form,
-                    mobile: onlyNumbers.slice(0, 10),
-                  });
-                }}
-              />
-
               {/* ✅ REVIEW - 200 CHARACTER LIMIT */}
               <div>
                 <textarea
@@ -169,7 +155,7 @@ export default function ReviewsClient({ initialReviews }: any) {
 
               {/* ⭐ STAR RATING */}
               <div>
-                <p className="text-sm font-medium mb-2">Rating</p>
+                <p className="text-sm font-medium mb-2">Given Rating</p>
                 <div className="flex gap-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <button
@@ -192,37 +178,6 @@ export default function ReviewsClient({ initialReviews }: any) {
                 </div>
               </div>
 
-              {/* STATUS */}
-              <div>
-                <p className="text-sm font-medium mb-2">Status</p>
-
-                <div className="flex items-center gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={!form.is_hidden}
-                      onChange={() =>
-                        setForm({ ...form, is_hidden: false })
-                      }
-                      className="w-4 h-4 accent-green-600"
-                    />
-                    <span>Publish</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={form.is_hidden}
-                      onChange={() =>
-                        setForm({ ...form, is_hidden: true })
-                      }
-                      className="w-4 h-4 accent-gray-600"
-                    />
-                    <span>Hidden</span>
-                  </label>
-                </div>
-              </div>
-
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -236,7 +191,7 @@ export default function ReviewsClient({ initialReviews }: any) {
                   type="submit"
                   className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800"
                 >
-                  Create
+                  Submit
                 </button>
               </div>
             </form>
