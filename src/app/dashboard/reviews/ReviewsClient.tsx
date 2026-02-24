@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createAdminReview } from "../../services/reviews.service";
 import ReviewRow from "../../components/Reviewrow";
-import { Plus, Star } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default function ReviewsClient({ initialReviews }: any) {
   const [reviews, setReviews] = useState(initialReviews || []);
@@ -26,10 +26,11 @@ export default function ReviewsClient({ initialReviews }: any) {
     const res = await createAdminReview(form);
 
     if (res.success) {
+      // Optimistically add new review on top
       setReviews((prev: any[]) => [
         {
           ...form,
-          id: Date.now(),
+          id: Date.now(), // temporary ID until reload
           created_at: new Date().toISOString(),
         },
         ...prev,
@@ -149,61 +150,34 @@ export default function ReviewsClient({ initialReviews }: any) {
                 }
               />
 
-              {/* ⭐ STAR RATING */}
-              <div>
-                <p className="text-sm font-medium mb-2">Rating</p>
-                <div className="flex gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <button
-                      type="button"
-                      key={i}
-                      onClick={() =>
-                        setForm({ ...form, rating: i + 1 })
-                      }
-                    >
-                      <Star
-                        size={22}
-                        className={
-                          i < form.rating
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-gray-300"
-                        }
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                required
+                className="w-full border p-2 rounded"
+                value={form.rating}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    rating: Number(e.target.value),
+                  })
+                }
+              />
 
-              {/* 🔘 ROUND PUBLISH / HIDDEN SWITCH */}
-              <div>
-                <p className="text-sm font-medium mb-2">Status</p>
-
-                <div className="flex items-center gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={!form.is_hidden}
-                      onChange={() =>
-                        setForm({ ...form, is_hidden: false })
-                      }
-                      className="w-4 h-4 accent-green-600"
-                    />
-                    <span>Publish</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={form.is_hidden}
-                      onChange={() =>
-                        setForm({ ...form, is_hidden: true })
-                      }
-                      className="w-4 h-4 accent-gray-600"
-                    />
-                    <span>Hidden</span>
-                  </label>
-                </div>
-              </div>
+              <select
+                className="w-full border p-2 rounded"
+                value={form.is_hidden ? "true" : "false"}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    is_hidden: e.target.value === "true",
+                  })
+                }
+              >
+                <option value="false">Publish</option>
+                <option value="true">Hidden</option>
+              </select>
 
               <div className="flex justify-end gap-3 pt-2">
                 <button
