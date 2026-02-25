@@ -49,7 +49,10 @@ export default function DashboardContactPage() {
         if (!res.ok) throw new Error();
 
         const data = await res.json();
-        setForm(data);
+       setForm({
+  ...data,
+  status: data.status || "working",
+});
       } catch (err) {
         console.error("Failed to fetch contact details");
       } finally {
