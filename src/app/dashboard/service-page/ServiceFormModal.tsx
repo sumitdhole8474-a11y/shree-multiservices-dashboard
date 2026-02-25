@@ -130,7 +130,7 @@ export default function ServiceFormModal({
   /* =========================
      SUBMIT
   ========================= */
- const submit = async (e: React.FormEvent) => {
+const submit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!form.title || !form.category_id) {
@@ -149,15 +149,21 @@ export default function ServiceFormModal({
 
     if (service) {
       // EDIT MODE
-      gallery.forEach((item) => {
+
+      gallery.forEach((item, index) => {
         if (!item.isExisting) {
+          // Find which existing image this position originally had
+          const existingImage = service.images[index];
+
+          if (!existingImage) return;
+
           fd.append("gallery", item.file);
-        } else {
-          fd.append("imageIds", String(item.id));
+          fd.append("replaceIds", String(existingImage.id));
         }
       });
+
     } else {
-      // CREATE MODE (must have 5)
+      // CREATE MODE
       if (gallery.length !== 5) {
         alert("Exactly 5 images are required.");
         setLoading(false);
