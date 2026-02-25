@@ -130,57 +130,65 @@ export default function ServiceFormModal({
   /* =========================
      SUBMIT
   ========================= */
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+ const submit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!form.title || !form.category_id) {
-      alert("Title and category are required.");
-      return;
-    }
+  if (!form.title || !form.category_id) {
+    alert("Title and category are required.");
+    return;
+  }
 
-    if (gallery.length !== 5) {
-      alert("Exactly 5 images are required.");
-      return;
-    }
+  setLoading(true);
 
-    setLoading(true);
+  try {
+    const fd = new FormData();
 
-    try {
-      const fd = new FormData();
+    fd.append("title", form.title);
+    fd.append("long_description", form.long_description);
+    fd.append("category_id", form.category_id);
 
-      fd.append("title", form.title);
-      fd.append("long_description", form.long_description);
-      fd.append("category_id", form.category_id);
-
-      // 🔥 Only append NEW images
-      const newImages = gallery.filter(
-        (item) => !item.isExisting
-      ) as { file: File }[];
-
-      if (!service || newImages.length === 5) {
-        newImages.forEach((item) => {
+    if (service) {
+      // EDIT MODE
+      gallery.forEach((item) => {
+        if (!item.isExisting) {
           fd.append("gallery", item.file);
-        });
-      }
-
-      const result = service
-        ? await updateService(service.id, fd)
-        : await createService(fd);
-
-      if (!result?.success) {
-        alert(result?.message || "Failed to save service");
+        } else {
+          fd.append("imageIds", String(item.id));
+        }
+      });
+    } else {
+      // CREATE MODE (must have 5)
+      if (gallery.length !== 5) {
+        alert("Exactly 5 images are required.");
+        setLoading(false);
         return;
       }
 
-      onSaved();
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong");
-    } finally {
-      setLoading(false);
+      gallery.forEach((item) => {
+        if (!item.isExisting) {
+          fd.append("gallery", item.file);
+        }
+      });
     }
-  };
 
+    const result = service
+      ? await updateService(service.id, fd)
+      : await createService(fd);
+
+    if (!result?.success) {
+      alert(result?.message || "Failed to save service");
+      return;
+    }
+
+    onSaved();
+
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <form
