@@ -150,7 +150,6 @@ export const createService = async (
 
 /* =========================================================
    UPDATE SERVICE
-   🔥 If gallery provided → must be exactly 5 images
 ========================================================= */
 
 export const updateService = async (
@@ -158,16 +157,6 @@ export const updateService = async (
   formData: FormData
 ): Promise<{ success: boolean; message?: string }> => {
   try {
-    const galleryFiles = formData.getAll("gallery");
-
-    if (galleryFiles.length > 0 && galleryFiles.length !== 5) {
-      return {
-        success: false,
-        message:
-          "Exactly 5 images are required when updating gallery",
-      };
-    }
-
     const res = await fetch(
       `${API_BASE_URL}/api/admin/services/${id}`,
       {
