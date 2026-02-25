@@ -16,6 +16,7 @@ type ContactData = {
   instagram_url: string;
   google_url: string;
   map_embed_url: string;
+  status: string; // ✅ ADDED
 };
 
 export default function DashboardContactPage() {
@@ -29,6 +30,7 @@ export default function DashboardContactPage() {
     instagram_url: "",
     google_url: "",
     map_embed_url: "",
+    status: "working", // ✅ DEFAULT
   });
 
   const [loading, setLoading] = useState(false);
@@ -100,7 +102,6 @@ export default function DashboardContactPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-6 md:p-10">
 
-      {/* HEADER */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
           Contact Information
@@ -110,13 +111,12 @@ export default function DashboardContactPage() {
         </p>
       </div>
 
-      {/* FORM CARD */}
       <div className="max-w-4xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl rounded-3xl p-8 md:p-12 transition-all duration-500 hover:shadow-blue-100">
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* ADDRESS */}
-          <div className="group">
+          <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               Address
             </label>
@@ -194,9 +194,51 @@ export default function DashboardContactPage() {
             />
           </div>
 
-          {/* SOCIAL LINKS WITH ICONS */}
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* ✅ WORKING STATUS BUTTONS (ADDED BELOW BUSINESS HOURS) */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
+              Working Status
+            </label>
 
+            <div className="flex gap-8">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="status"
+                  value="working"
+                  checked={form.status === "working"}
+                  onChange={handleChange}
+                  className="hidden"
+                />
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.status === "working" ? "border-green-500" : "border-slate-300"}`}>
+                  {form.status === "working" && (
+                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                  )}
+                </div>
+                <span className="text-green-600 font-medium">Working</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="status"
+                  value="closed"
+                  checked={form.status === "closed"}
+                  onChange={handleChange}
+                  className="hidden"
+                />
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.status === "closed" ? "border-red-500" : "border-slate-300"}`}>
+                  {form.status === "closed" && (
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  )}
+                </div>
+                <span className="text-red-600 font-medium">Closed</span>
+              </label>
+            </div>
+          </div>
+
+          {/* SOCIAL LINKS */}
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
                 <FaFacebookF className="text-blue-600" />
@@ -248,7 +290,6 @@ export default function DashboardContactPage() {
                 className="rounded-xl border border-slate-200 px-4 py-3 w-full focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
               />
             </div>
-
           </div>
 
           {success && (

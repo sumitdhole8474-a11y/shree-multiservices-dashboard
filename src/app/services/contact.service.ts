@@ -6,16 +6,22 @@ export const getContactDetails = async () => {
   });
 
   if (!res.ok) throw new Error("Failed to fetch contact");
-  return res.json();
+
+  return res.json(); // will now include status automatically
 };
 
 export const updateContactDetails = async (data: any) => {
   const res = await fetch(`${API_URL}/api/contact`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...data, // includes status now
+    }),
   });
 
   if (!res.ok) throw new Error("Failed to update contact");
+
   return res.json();
 };
