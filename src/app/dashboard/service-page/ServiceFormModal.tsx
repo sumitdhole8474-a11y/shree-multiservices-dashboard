@@ -138,6 +138,12 @@ const submit = async (e: React.FormEvent) => {
     return;
   }
 
+  // Only require 5 images when creating
+  if (!service && gallery.length !== 5) {
+    alert("Exactly 5 images are required.");
+    return;
+  }
+
   setLoading(true);
 
   try {
@@ -147,35 +153,14 @@ const submit = async (e: React.FormEvent) => {
     fd.append("long_description", form.long_description);
     fd.append("category_id", form.category_id);
 
-    if (service) {
-      // EDIT MODE
+    // Send only NEW images
+    const newImages = gallery.filter(
+      (item) => !item.isExisting
+    ) as { file: File }[];
 
-      gallery.forEach((item, index) => {
-        if (!item.isExisting) {
-          // Find which existing image this position originally had
-          const existingImage = service.images[index];
-
-          if (!existingImage) return;
-
-          fd.append("gallery", item.file);
-          fd.append("replaceIds", String(existingImage.id));
-        }
-      });
-
-    } else {
-      // CREATE MODE
-      if (gallery.length !== 5) {
-        alert("Exactly 5 images are required.");
-        setLoading(false);
-        return;
-      }
-
-      gallery.forEach((item) => {
-        if (!item.isExisting) {
-          fd.append("gallery", item.file);
-        }
-      });
-    }
+    newImages.forEach((item) => {
+      fd.append("gallery", item.file);
+    });
 
     const result = service
       ? await updateService(service.id, fd)
@@ -187,7 +172,6 @@ const submit = async (e: React.FormEvent) => {
     }
 
     onSaved();
-
   } catch (err) {
     console.error(err);
     alert("Something went wrong");
@@ -195,6 +179,7 @@ const submit = async (e: React.FormEvent) => {
     setLoading(false);
   }
 };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <form

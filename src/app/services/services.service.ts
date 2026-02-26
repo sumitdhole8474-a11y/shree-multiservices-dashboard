@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_BASE_URL) {
   console.warn("⚠️ NEXT_PUBLIC_API_URL is not defined");
@@ -14,7 +13,7 @@ export interface AdminService {
   title: string;
   image_url?: string; // first image (for table preview)
   images?: {
-    id: number; // ✅ needed for delete/swap
+    id: number;
     image_url: string;
     sort_order: number;
   }[];
@@ -104,7 +103,7 @@ export const getAdminServiceById = async (
 
 /* =========================================================
    CREATE SERVICE
-   🔥 Requires exactly 5 images in field name: gallery
+   🔥 Requires exactly 5 images
 ========================================================= */
 
 export const createService = async (
@@ -150,6 +149,9 @@ export const createService = async (
 
 /* =========================================================
    UPDATE SERVICE
+   🔥 Flexible: 0–5 images allowed
+   ✔ Text-only update allowed
+   ✔ Partial image update allowed
 ========================================================= */
 
 export const updateService = async (
@@ -157,6 +159,9 @@ export const updateService = async (
   formData: FormData
 ): Promise<{ success: boolean; message?: string }> => {
   try {
+    // 🔥 IMPORTANT: No forced 5-image validation anymore
+    // Backend will handle partial image updates safely
+
     const res = await fetch(
       `${API_BASE_URL}/api/admin/services/${id}`,
       {
