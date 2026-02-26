@@ -167,6 +167,14 @@ const submit = async (e: React.FormEvent) => {
   }
 });
 
+// Send image order (IDs)
+gallery.forEach((item, index) => {
+  if (item.isExisting) {
+    fd.append("order_ids[]", String(item.id));
+  }
+});
+
+
     const result = service
       ? await updateService(service.id, fd)
       : await createService(fd);
