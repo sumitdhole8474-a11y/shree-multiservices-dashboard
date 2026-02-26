@@ -158,9 +158,14 @@ const submit = async (e: React.FormEvent) => {
       (item) => !item.isExisting
     ) as { file: File }[];
 
-    newImages.forEach((item) => {
-      fd.append("gallery", item.file);
-    });
+   gallery.forEach((item, index) => {
+  if (!item.isExisting) {
+    fd.append("gallery", item.file);
+
+    // send position index
+    fd.append("positions", String(index));
+  }
+});
 
     const result = service
       ? await updateService(service.id, fd)
