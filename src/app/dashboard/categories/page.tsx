@@ -6,6 +6,7 @@ import {
   createCategory,
   deleteCategory,
   updateCategory,
+  reorderCategories,
 } from "../../services/categories.service";
 import {
   Trash2,
@@ -14,6 +15,7 @@ import {
   Pencil,
   Check,
   X,
+  GripVertical,
 } from "lucide-react";
 
 export default function CategoriesPage() {
@@ -30,6 +32,10 @@ export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] =
     useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  /* DRAG STATE */
+  const [draggingIndex, setDraggingIndex] =
+    useState<number | null>(null);
 
   /* =============================
      LOAD DATA
@@ -83,6 +89,27 @@ export default function CategoriesPage() {
   };
 
   /* =============================
+     DRAG HANDLERS
+  ============================= */
+  const handleDragStart = (index: number) => {
+    setDraggingIndex(index);
+  };
+
+  const handleDrop = async (index: number) => {
+    if (draggingIndex === null) return;
+
+    const updated = [...categories];
+    const [moved] = updated.splice(draggingIndex, 1);
+    updated.splice(index, 0, moved);
+
+    setCategories(updated);
+    setDraggingIndex(null);
+
+    // Save new order
+    await reorderCategories(updated.map((c) => c.id));
+  };
+
+  /* =============================
      FILTER
   ============================= */
   const filteredCategories = categories.filter((cat) =>
@@ -91,9 +118,7 @@ export default function CategoriesPage() {
 
   return (
     <>
-      {/* =====================
-          DELETE MODAL
-      ===================== */}
+      {/* DELETE MODAL */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
@@ -130,11 +155,8 @@ export default function CategoriesPage() {
         </div>
       )}
 
-      {/* =====================
-          PAGE CONTENT
-      ===================== */}
+      {/* PAGE CONTENT */}
       <div className="p-8 space-y-8">
-        {/* HEADER */}
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">
             Categories
@@ -146,7 +168,6 @@ export default function CategoriesPage() {
 
         {/* ACTION BAR */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          {/* ADD CATEGORY */}
           <form
             onSubmit={handleSubmit}
             className="flex gap-3 flex-1"
@@ -166,7 +187,6 @@ export default function CategoriesPage() {
             </button>
           </form>
 
-          {/* SEARCH */}
           <div className="relative w-full sm:w-72">
             <Search
               size={18}
@@ -183,15 +203,26 @@ export default function CategoriesPage() {
 
         {/* CARD GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCategories.map((cat) => (
+          {filteredCategories.map((cat, index) => (
             <div
               key={cat.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(index)}
+              className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-6 transition-all duration-300 ${
+                draggingIndex === index
+                  ? "scale-95 opacity-70"
+                  : "hover:shadow-lg"
+              }`}
             >
-              {/* HEADER WITH TITLE AND ACTIONS INLINE */}
               <div className="flex items-start justify-between gap-4">
-                {/* TITLE OR EDIT INPUT */}
-                <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <GripVertical
+                    size={18}
+                    className="text-gray-400 cursor-grab active:cursor-grabbing"
+                  />
+
                   {editingId === cat.id ? (
                     <input
                       value={editTitle}
@@ -202,20 +233,18 @@ export default function CategoriesPage() {
                       autoFocus
                     />
                   ) : (
-                    <h3 className="text-lg font-semibold text-gray-900 break-words pr-2">
+                    <h3 className="text-lg font-semibold text-gray-900 break-words">
                       {cat.title}
                     </h3>
                   )}
                 </div>
 
-                {/* ACTION BUTTONS INLINE */}
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1">
                   {editingId === cat.id ? (
                     <>
                       <button
                         onClick={() => handleUpdate(cat.id)}
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-green-600 hover:bg-green-50 transition-colors"
-                        title="Save"
                       >
                         <Check size={16} />
                       </button>
@@ -226,7 +255,6 @@ export default function CategoriesPage() {
                           setEditTitle("");
                         }}
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
-                        title="Cancel"
                       >
                         <X size={16} />
                       </button>
@@ -239,7 +267,6 @@ export default function CategoriesPage() {
                           setEditTitle(cat.title);
                         }}
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Edit"
                       >
                         <Pencil size={16} />
                       </button>
@@ -247,7 +274,6 @@ export default function CategoriesPage() {
                       <button
                         onClick={() => setDeleteTarget(cat)}
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                        title="Delete"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -256,7 +282,6 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              {/* CREATED DATE */}
               <p className="text-xs text-gray-500 mt-2">
                 Created on{" "}
                 {new Date(cat.created_at).toLocaleDateString()}

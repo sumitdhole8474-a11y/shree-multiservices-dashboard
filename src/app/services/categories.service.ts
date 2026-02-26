@@ -127,7 +127,43 @@ export const updateCategory = async (
   } catch (error) {
     console.error(
       "❌ updateCategory error:",
-        error
+      error
+    );
+    return { success: false };
+  }
+};
+
+/* =============================
+   REORDER CATEGORIES (NEW)
+============================= */
+export const reorderCategories = async (
+  orderedIds: number[]
+): Promise<{ success: boolean }> => {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/admin/categories/reorder`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderedIds }),
+      }
+    );
+
+    if (!res.ok) {
+      console.warn(
+        "⚠️ reorderCategories failed:",
+        res.status
+      );
+      return { success: false };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error(
+      "❌ reorderCategories error:",
+      error
     );
     return { success: false };
   }
