@@ -37,6 +37,8 @@ export default function CategoriesPage() {
   const [draggingIndex, setDraggingIndex] =
     useState<number | null>(null);
 
+  const isSearching = search.trim().length > 0;
+
   /* =============================
      LOAD DATA
   ============================= */
@@ -92,11 +94,12 @@ export default function CategoriesPage() {
      DRAG HANDLERS
   ============================= */
   const handleDragStart = (index: number) => {
+    if (isSearching) return;
     setDraggingIndex(index);
   };
 
   const handleDrop = async (index: number) => {
-    if (draggingIndex === null) return;
+    if (draggingIndex === null || isSearching) return;
 
     const updated = [...categories];
     const [moved] = updated.splice(draggingIndex, 1);
@@ -105,8 +108,11 @@ export default function CategoriesPage() {
     setCategories(updated);
     setDraggingIndex(null);
 
-    // Save new order
+    // Save new order to backend
     await reorderCategories(updated.map((c) => c.id));
+
+    // Reload to ensure DB sync
+    await loadData();
   };
 
   /* =============================
@@ -206,7 +212,7 @@ export default function CategoriesPage() {
           {filteredCategories.map((cat, index) => (
             <div
               key={cat.id}
-              draggable
+              draggable={!isSearching}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(index)}
@@ -220,7 +226,11 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-2">
                   <GripVertical
                     size={18}
-                    className="text-gray-400 cursor-grab active:cursor-grabbing"
+                    className={`text-gray-400 ${
+                      isSearching
+                        ? "opacity-30 cursor-not-allowed"
+                        : "cursor-grab active:cursor-grabbing"
+                    }`}
                   />
 
                   {editingId === cat.id ? (
